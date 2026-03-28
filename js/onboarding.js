@@ -38,6 +38,23 @@
     }
   }
 
+  function writeSession(user) {
+    try {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  /** Merge InsForge auth user into campusconnect_user for downstream readSession(). */
+  function ensureSessionFromAuthUser(authUser) {
+    var cur = readSession() || {};
+    cur.id = authUser.id;
+    if (authUser.email) cur.email = authUser.email;
+    if (authUser.profile && authUser.profile.name) cur.name = authUser.profile.name;
+    writeSession(cur);
+  }
+
   function syncRadioItemClasses() {
     document.querySelectorAll(".radio-item").forEach(function (item) {
       var input = item.querySelector('input[type="radio"]');
@@ -188,14 +205,22 @@
     }
   }
 
+  function profileSubmitErrorMessage(err) {
+    if (err && typeof err.message === "string" && err.message) return err.message;
+    return "Could not save your profile. Try again.";
+  }
+
   function submitProfile() {
-    var session = readSession();
-    if (!session || !session.id) {
-      window.location.href = "login.html";
+    clearStepError(6);
+
+    if (typeof window.getInsforgeClient !== "function") {
+      showStepError(6, "Connection to the server is unavailable. Refresh the page and try again.");
       return;
     }
 
-    var payload = {
+    if (nextBtn) nextBtn.disabled = true;
+
+    var payloadBase = {
       institution: profileData.institution,
       course: profileData.course,
       year: profileData.year,
@@ -205,34 +230,47 @@
       preferredFormats: profileData.preferredFormats.slice(),
       formats: profileData.preferredFormats.slice(),
     };
-    if (session.name) payload.name = session.name;
-    if (session.email) payload.email = session.email;
-
-    var row = {
-      user_id: session.id,
-      institution: profileData.institution,
-      course: profileData.course,
-      year: profileData.year,
-      interests: profileData.interests.slice(),
-      goals: profileData.goals.slice(),
-      preferred_formats: profileData.preferredFormats.slice(),
-    };
-
-    if (typeof window.getInsforgeClient !== "function") {
-      persistProfileLocal(payload);
-      window.location.href = "index.html";
-      return;
-    }
-
-    if (nextBtn) nextBtn.disabled = true;
 
     window
       .getInsforgeClient()
       .then(function (ins) {
+        return ins.auth.getCurrentUser().then(function (authRes) {
+          var uid = null;
+          if (authRes.data && authRes.data.user) uid = authRes.data.user.id;
+          if (!uid) {
+            var sess = readSession();
+            uid = sess && sess.id ? sess.id : null;
+          }
+          if (!uid) {
+            throw new Error("Could not verify your account. Please sign in again.");
+          }
+          return { ins: ins, userId: uid };
+        });
+      })
+      .then(function (ctx) {
+        var ins = ctx.ins;
+        var userId = ctx.userId;
+        var session = readSession();
+        var payload = Object.assign({}, payloadBase);
+        if (session && session.name) payload.name = session.name;
+        if (session && session.email) payload.email = session.email;
+
+        var createdAt = new Date().toISOString();
+        var rowInsert = {
+          user_id: userId,
+          institution: profileData.institution,
+          course: profileData.course,
+          year: profileData.year,
+          interests: profileData.interests.slice(),
+          goals: profileData.goals.slice(),
+          preferred_formats: profileData.preferredFormats.slice(),
+          created_at: createdAt,
+        };
+
         return ins.database
           .from("profiles")
           .select("id")
-          .eq("user_id", session.id)
+          .eq("user_id", userId)
           .maybeSingle()
           .then(function (sel) {
             if (sel.error) throw sel.error;
@@ -240,27 +278,30 @@
               return ins.database
                 .from("profiles")
                 .update({
-                  institution: row.institution,
-                  course: row.course,
-                  year: row.year,
-                  interests: row.interests,
-                  goals: row.goals,
-                  preferred_formats: row.preferred_formats,
+                  institution: rowInsert.institution,
+                  course: rowInsert.course,
+                  year: rowInsert.year,
+                  interests: rowInsert.interests,
+                  goals: rowInsert.goals,
+                  preferred_formats: rowInsert.preferred_formats,
                 })
-                .eq("user_id", session.id)
+                .eq("user_id", userId)
                 .select();
             }
-            return ins.database.from("profiles").insert(row).select();
+            return ins.database.from("profiles").insert(rowInsert).select();
+          })
+          .then(function (res) {
+            if (res.error) throw res.error;
+            return payload;
           });
       })
-      .then(function (res) {
-        if (res.error) throw res.error;
+      .then(function (payload) {
         persistProfileLocal(payload);
         window.location.href = "index.html";
       })
       .catch(function (err) {
         if (nextBtn) nextBtn.disabled = false;
-        window.alert((err && err.message) || "Could not save your profile. Try again.");
+        showStepError(6, profileSubmitErrorMessage(err));
       });
   }
 
@@ -322,12 +363,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    function startOnboarding() {
-      if (!readSession()) {
-        window.location.href = "login.html";
-        return;
-      }
-
+    function startOnboardingUi() {
       cacheDom();
       bindRadioAndCheckboxUi();
       syncRadioItemClasses();
@@ -347,27 +383,49 @@
       showStep(1);
     }
 
-    var A = window.CampusConnectAuth;
-    if (typeof window.getInsforgeClient === "function" && A && typeof A.isAuthenticated === "function") {
-      window
-        .getInsforgeClient()
-        .then(function () {
-          return A.isAuthenticated();
-        })
-        .then(function (ok) {
-          if (!ok) {
-            window.location.href = "login.html";
-            return;
-          }
-          startOnboarding();
-        })
-        .catch(function () {
-          window.location.href = "login.html";
-        });
+    if (typeof window.getInsforgeClient !== "function") {
+      window.location.href = "login.html";
       return;
     }
 
-    startOnboarding();
+    window
+      .getInsforgeClient()
+      .then(function (ins) {
+        return ins.auth.getCurrentUser().then(function (res) {
+          return { ins: ins, res: res };
+        });
+      })
+      .then(function (ctx) {
+        if (ctx.res.error || !ctx.res.data || !ctx.res.data.user) {
+          window.location.href = "login.html";
+          return null;
+        }
+        var u = ctx.res.data.user;
+        ensureSessionFromAuthUser(u);
+        return ctx.ins.database
+          .from("profiles")
+          .select("id")
+          .eq("user_id", u.id)
+          .maybeSingle()
+          .then(function (prof) {
+            return { prof: prof };
+          });
+      })
+      .then(function (next) {
+        if (!next) return;
+        if (next.prof.error) {
+          window.location.href = "login.html";
+          return;
+        }
+        if (next.prof.data && next.prof.data.id) {
+          window.location.href = "index.html";
+          return;
+        }
+        startOnboardingUi();
+      })
+      .catch(function () {
+        window.location.href = "login.html";
+      });
   });
 
   window.CampusConnectOnboarding = {
