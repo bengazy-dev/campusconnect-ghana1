@@ -180,8 +180,21 @@
     }
   }
 
+  function persistProfileLocal(payload) {
+    try {
+      localStorage.setItem(ONBOARDING_KEY, JSON.stringify(payload));
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
   function submitProfile() {
     var session = readSession();
+    if (!session || !session.id) {
+      window.location.href = "login.html";
+      return;
+    }
+
     var payload = {
       institution: profileData.institution,
       course: profileData.course,
@@ -192,18 +205,63 @@
       preferredFormats: profileData.preferredFormats.slice(),
       formats: profileData.preferredFormats.slice(),
     };
-    if (session && session.name) payload.name = session.name;
-    if (session && session.email) payload.email = session.email;
+    if (session.name) payload.name = session.name;
+    if (session.email) payload.email = session.email;
 
-    console.log("[InsForge TODO] save onboarding profile", payload);
+    var row = {
+      user_id: session.id,
+      institution: profileData.institution,
+      course: profileData.course,
+      year: profileData.year,
+      interests: profileData.interests.slice(),
+      goals: profileData.goals.slice(),
+      preferred_formats: profileData.preferredFormats.slice(),
+    };
 
-    try {
-      localStorage.setItem(ONBOARDING_KEY, JSON.stringify(payload));
-    } catch (e) {
-      /* ignore */
+    if (typeof window.getInsforgeClient !== "function") {
+      persistProfileLocal(payload);
+      window.location.href = "index.html";
+      return;
     }
 
-    window.location.href = "index.html";
+    if (nextBtn) nextBtn.disabled = true;
+
+    window
+      .getInsforgeClient()
+      .then(function (ins) {
+        return ins.database
+          .from("profiles")
+          .select("id")
+          .eq("user_id", session.id)
+          .maybeSingle()
+          .then(function (sel) {
+            if (sel.error) throw sel.error;
+            if (sel.data && sel.data.id) {
+              return ins.database
+                .from("profiles")
+                .update({
+                  institution: row.institution,
+                  course: row.course,
+                  year: row.year,
+                  interests: row.interests,
+                  goals: row.goals,
+                  preferred_formats: row.preferred_formats,
+                })
+                .eq("user_id", session.id)
+                .select();
+            }
+            return ins.database.from("profiles").insert(row).select();
+          });
+      })
+      .then(function (res) {
+        if (res.error) throw res.error;
+        persistProfileLocal(payload);
+        window.location.href = "index.html";
+      })
+      .catch(function (err) {
+        if (nextBtn) nextBtn.disabled = false;
+        window.alert((err && err.message) || "Could not save your profile. Try again.");
+      });
   }
 
   function onNextClick() {
@@ -264,28 +322,52 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    if (!readSession()) {
-      window.location.href = "login.html";
+    function startOnboarding() {
+      if (!readSession()) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      cacheDom();
+      bindRadioAndCheckboxUi();
+      syncRadioItemClasses();
+      syncCheckboxItemClasses();
+
+      if (nextBtn) nextBtn.addEventListener("click", onNextClick);
+      if (prevBtn) prevBtn.addEventListener("click", onPrevClick);
+
+      var form = document.getElementById("onboardingForm");
+      if (form) {
+        form.addEventListener("submit", function (e) {
+          e.preventDefault();
+          onNextClick();
+        });
+      }
+
+      showStep(1);
+    }
+
+    var A = window.CampusConnectAuth;
+    if (typeof window.getInsforgeClient === "function" && A && typeof A.isAuthenticated === "function") {
+      window
+        .getInsforgeClient()
+        .then(function () {
+          return A.isAuthenticated();
+        })
+        .then(function (ok) {
+          if (!ok) {
+            window.location.href = "login.html";
+            return;
+          }
+          startOnboarding();
+        })
+        .catch(function () {
+          window.location.href = "login.html";
+        });
       return;
     }
 
-    cacheDom();
-    bindRadioAndCheckboxUi();
-    syncRadioItemClasses();
-    syncCheckboxItemClasses();
-
-    if (nextBtn) nextBtn.addEventListener("click", onNextClick);
-    if (prevBtn) prevBtn.addEventListener("click", onPrevClick);
-
-    var form = document.getElementById("onboardingForm");
-    if (form) {
-      form.addEventListener("submit", function (e) {
-        e.preventDefault();
-        onNextClick();
-      });
-    }
-
-    showStep(1);
+    startOnboarding();
   });
 
   window.CampusConnectOnboarding = {

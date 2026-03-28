@@ -152,6 +152,30 @@
     return true;
   }
 
+  function runProtectedInit(initFn) {
+    var A = window.CampusConnectAuth;
+    if (typeof window.getInsforgeClient === "function" && A && typeof A.isAuthenticated === "function") {
+      window
+        .getInsforgeClient()
+        .then(function () {
+          return A.isAuthenticated();
+        })
+        .then(function (ok) {
+          if (!ok) {
+            window.location.href = "login.html";
+            return;
+          }
+          initFn();
+        })
+        .catch(function () {
+          window.location.href = "login.html";
+        });
+      return;
+    }
+    if (!requireAuthOrRedirect()) return;
+    initFn();
+  }
+
   function loadUserProfile() {
     if (M && typeof M.buildUserProfile === "function") {
       return M.buildUserProfile(readProfileRaw());
@@ -547,7 +571,6 @@
   }
 
   function initDashboard() {
-    if (!requireAuthOrRedirect()) return;
     userProfile = loadUserProfile();
     updateWelcomeSection();
     setupFilters();
@@ -561,7 +584,6 @@
   }
 
   function initSavedPage() {
-    if (!requireAuthOrRedirect()) return;
     userProfile = loadUserProfile();
     setupFilters();
     bindSavedGridClicks();
@@ -844,13 +866,13 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     if (document.getElementById("eventContainer")) {
-      initEventDetail();
+      runProtectedInit(initEventDetail);
     } else if (document.getElementById("savedGrid")) {
-      initSavedPage();
+      runProtectedInit(initSavedPage);
     } else if (document.getElementById("submitForm")) {
-      initSubmitForm();
+      runProtectedInit(initSubmitForm);
     } else if (document.getElementById("eventsGrid")) {
-      initDashboard();
+      runProtectedInit(initDashboard);
     }
   });
 

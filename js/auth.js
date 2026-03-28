@@ -28,6 +28,7 @@
   var selectedRole = null;
 
   var USER_KEY = "campusconnect_user";
+  var PENDING_SIGNUP_KEY = "campusconnect_pending_signup";
 
   function showError(el, message) {
     if (!el) return;
@@ -79,78 +80,91 @@
     }
   }
 
-  function redirectAfterLogin(user) {
-    if (user.role === "student") {
-      if (!hasCompletedOnboarding()) {
-        window.location.href = "onboarding.html";
-      } else {
-        window.location.href = "index.html";
-      }
-    } else {
-      window.location.href = "submit.html";
+  function getInsforge() {
+    if (typeof window.getInsforgeClient !== "function") {
+      return Promise.reject(new Error("Authentication is not configured."));
     }
+    return window.getInsforgeClient();
+  }
+
+  function fetchUserRow(insforge, userId) {
+    return insforge.database
+      .from("users")
+      .select("id,email,name,role")
+      .eq("id", userId)
+      .maybeSingle()
+      .then(function (r) {
+        if (r.error) throw r.error;
+        return r.data;
+      });
+  }
+
+  function ensureUserInTable(insforge, row) {
+    return insforge.database
+      .from("users")
+      .select("id")
+      .eq("id", row.id)
+      .maybeSingle()
+      .then(function (sel) {
+        if (sel.error) throw sel.error;
+        if (sel.data && sel.data.id) {
+          return insforge.database
+            .from("users")
+            .update({ email: row.email, name: row.name, role: row.role })
+            .eq("id", row.id)
+            .select();
+        }
+        return insforge.database
+          .from("users")
+          .insert({
+            id: row.id,
+            email: row.email,
+            name: row.name,
+            role: row.role,
+            password_hash: "",
+          })
+          .select();
+      })
+      .then(function (result) {
+        if (result.error) throw result.error;
+        return result;
+      });
+  }
+
+  function profileExistsForUser(insforge, userId) {
+    return insforge.database
+      .from("profiles")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(function (r) {
+        if (r.error) return false;
+        return !!(r.data && r.data.id);
+      });
+  }
+
+  function redirectAfterLoginAsync(insforge, sessionUser) {
+    if (sessionUser.role === "organizer") {
+      window.location.href = "submit.html";
+      return Promise.resolve();
+    }
+    return profileExistsForUser(insforge, sessionUser.id).then(function (exists) {
+      window.location.href = exists ? "index.html" : "onboarding.html";
+    });
   }
 
   function redirectAfterSignup(user) {
     if (user.role === "student") {
       window.location.href = "onboarding.html";
     } else {
-      window.location.href = "submit.html";
+      window.location.href = "index.html";
     }
   }
 
-  /**
-   * TODO: Replace with InsForge auth API call.
-   * @returns {Promise<object>}
-   */
-  function insForgeLoginPlaceholder(email, password) {
-    return new Promise(function (resolve, reject) {
-      console.log("[InsForge TODO] login", { email });
-      window.setTimeout(function () {
-        if (!email || !password) {
-          reject(new Error("Invalid email or password."));
-          return;
-        }
-        var existing = readSession();
-        if (existing && existing.email === email && existing.role) {
-          resolve({
-            email: existing.email,
-            name: existing.name || "User",
-            role: existing.role,
-          });
-          return;
-        }
-        resolve({
-          email: email,
-          name: email.split("@")[0] || "User",
-          role: "student",
-        });
-      }, 600);
-    });
-  }
-
-  /**
-   * TODO: Replace with InsForge sign-up API call.
-   * @returns {Promise<object>}
-   */
-  function insForgeSignupPlaceholder(payload) {
-    return new Promise(function (resolve, reject) {
-      console.log("[InsForge TODO] signup", {
-        email: payload.email,
-        role: payload.role,
-      });
-      window.setTimeout(function () {
-        if (!payload.email || !payload.password || !payload.name || !payload.role) {
-          reject(new Error("Could not create account."));
-          return;
-        }
-        resolve({
-          email: payload.email,
-          name: payload.name,
-          role: payload.role,
-        });
-      }, 600);
-    });
+  function authErrorMessage(err) {
+    if (!err) return "Something went wrong.";
+    if (typeof err.message === "string" && err.message) return err.message;
+    return "Something went wrong.";
   }
 
   function showLoginPanel() {
@@ -216,14 +230,64 @@
     }
 
     setLoading(loginSubmitBtn, true);
-    insForgeLoginPlaceholder(email, password)
-      .then(function (user) {
-        writeSession(user);
-        setLoading(loginSubmitBtn, false);
-        redirectAfterLogin(user);
+    getInsforge()
+      .then(function (ins) {
+        return ins.auth.signInWithPassword({ email: email, password: password }).then(function (res) {
+          return { ins: ins, res: res };
+        });
+      })
+      .then(function (ctx) {
+        var ins = ctx.ins;
+        var res = ctx.res;
+        if (res.error) throw res.error;
+        if (!res.data || !res.data.user) throw new Error("Sign in failed.");
+        var u = res.data.user;
+        return fetchUserRow(ins, u.id).then(function (row) {
+          return { ins: ins, u: u, row: row };
+        });
+      })
+      .then(function (ctx) {
+        var ins = ctx.ins;
+        var u = ctx.u;
+        var row = ctx.row;
+
+        if (row && row.id) {
+          var displayName = row.name || (u.profile && u.profile.name) || email.split("@")[0];
+          var role = row.role;
+          var sessionUser = { id: u.id, email: u.email || row.email, name: displayName, role: role };
+          writeSession(sessionUser);
+          setLoading(loginSubmitBtn, false);
+          return redirectAfterLoginAsync(ins, sessionUser);
+        }
+
+        var pending = null;
+        try {
+          pending = JSON.parse(sessionStorage.getItem(PENDING_SIGNUP_KEY) || "null");
+        } catch (e2) {
+          pending = null;
+        }
+        var uEmail = (u.email || "").toLowerCase();
+        if (pending && pending.email && uEmail === String(pending.email).toLowerCase()) {
+          var displayName2 = pending.name || (u.profile && u.profile.name) || email.split("@")[0];
+          var role2 = pending.role || "student";
+          return ensureUserInTable(ins, {
+            id: u.id,
+            email: u.email,
+            name: displayName2,
+            role: role2,
+          }).then(function () {
+            sessionStorage.removeItem(PENDING_SIGNUP_KEY);
+            var sessionUser2 = { id: u.id, email: u.email, name: displayName2, role: role2 };
+            writeSession(sessionUser2);
+            setLoading(loginSubmitBtn, false);
+            return redirectAfterLoginAsync(ins, sessionUser2);
+          });
+        }
+
+        throw new Error("Account setup incomplete. Finish sign up or use the same email you registered with.");
       })
       .catch(function (err) {
-        showError(loginError, err.message || "Login failed. Try again.");
+        showError(loginError, authErrorMessage(err) || "Login failed. Try again.");
         setLoading(loginSubmitBtn, false);
       });
   }
@@ -254,26 +318,117 @@
       return;
     }
 
+    var redirectTo = window.location.href.split("#")[0];
+
     setLoading(signupSubmitBtn, true);
-    insForgeSignupPlaceholder({ name: name, email: email, password: password, role: role })
-      .then(function (user) {
-        writeSession(user);
-        setLoading(signupSubmitBtn, false);
-        redirectAfterSignup(user);
+    getInsforge()
+      .then(function (ins) {
+        return ins.auth
+          .signUp({
+            email: email,
+            password: password,
+            name: name,
+            redirectTo: redirectTo,
+          })
+          .then(function (res) {
+            return { ins: ins, res: res };
+          });
+      })
+      .then(function (ctx) {
+        var ins = ctx.ins;
+        var res = ctx.res;
+        if (res.error) throw res.error;
+        var d = res.data;
+        if (!d || !d.user) throw new Error("Could not create account.");
+
+        if (d.requireEmailVerification && !d.accessToken) {
+          try {
+            sessionStorage.setItem(PENDING_SIGNUP_KEY, JSON.stringify({ email: email, name: name, role: role }));
+          } catch (e3) {
+            /* ignore */
+          }
+          setLoading(signupSubmitBtn, false);
+          showError(
+            signupError,
+            "We sent a verification code to your email. Enter it to verify, then sign in here. Check spam if you do not see it."
+          );
+          return;
+        }
+
+        if (!d.accessToken) {
+          throw new Error("Could not sign you in. Try again.");
+        }
+
+        return ensureUserInTable(ins, {
+          id: d.user.id,
+          email: email,
+          name: name,
+          role: role,
+        }).then(function () {
+          var sessionUser = { id: d.user.id, email: email, name: name, role: role };
+          writeSession(sessionUser);
+          setLoading(signupSubmitBtn, false);
+          redirectAfterSignup(sessionUser);
+        });
       })
       .catch(function (err) {
-        showError(signupError, err.message || "Sign up failed. Try again.");
+        showError(signupError, authErrorMessage(err) || "Sign up failed. Try again.");
         setLoading(signupSubmitBtn, false);
       });
   }
 
-  function logout() {
+  function clearCampusConnectStorage() {
     try {
-      localStorage.removeItem(USER_KEY);
+      var keys = Object.keys(localStorage);
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].indexOf("campusconnect_") === 0) {
+          localStorage.removeItem(keys[i]);
+        }
+      }
     } catch (e) {
       /* ignore */
     }
-    window.location.href = "login.html";
+    try {
+      sessionStorage.removeItem(PENDING_SIGNUP_KEY);
+    } catch (e2) {
+      /* ignore */
+    }
+  }
+
+  function logout() {
+    function finish() {
+      clearCampusConnectStorage();
+      window.location.href = "login.html";
+    }
+
+    if (typeof window.getInsforgeClient !== "function") {
+      finish();
+      return;
+    }
+
+    window
+      .getInsforgeClient()
+      .then(function (ins) {
+        return ins.auth.signOut();
+      })
+      .catch(function () {
+        /* ignore */
+      })
+      .finally(finish);
+  }
+
+  function isAuthenticated() {
+    return getInsforge()
+      .then(function (ins) {
+        return ins.auth.getCurrentUser();
+      })
+      .then(function (res) {
+        if (res.error) return false;
+        return !!(res.data && res.data.user);
+      })
+      .catch(function () {
+        return false;
+      });
   }
 
   function cacheDom() {
@@ -329,9 +484,19 @@
     }
   }
 
+  function bindNavLogout() {
+    var navLogout = document.getElementById("navLogout");
+    if (!navLogout) return;
+    navLogout.addEventListener("click", function (e) {
+      e.preventDefault();
+      logout();
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     cacheDom();
     bindLoginPage();
+    bindNavLogout();
   });
 
   window.CampusConnectAuth = {
@@ -343,5 +508,6 @@
       return selectedRole;
     },
     readSession: readSession,
+    isAuthenticated: isAuthenticated,
   };
 })();
