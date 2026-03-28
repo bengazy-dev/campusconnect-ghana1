@@ -1386,6 +1386,34 @@ textarea::placeholder {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Saved events page                                                          */
+/* -------------------------------------------------------------------------- */
+
+.saved-page {
+  padding: 1.25rem 1rem 2.5rem;
+}
+
+.saved-page__intro {
+  margin-bottom: 1.5rem;
+}
+
+.saved-page__title {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  font-weight: 700;
+}
+
+.saved-page__subtext {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.empty-state__cta {
+  margin-top: 1rem;
+}
+
+/* -------------------------------------------------------------------------- */
 /* Submit (organizer) form                                                    */
 /* -------------------------------------------------------------------------- */
 

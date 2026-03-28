@@ -223,9 +223,25 @@
     return "event-card__match--good";
   }
 
-  function createCard(event, profile) {
-    var score = M.scoreEventForUser(event, profile);
-    var label = M.getMatchLabel(score);
+  function matchScoreAndLabel(event, profile) {
+    var score =
+      M && typeof M.scoreEventForUser === "function"
+        ? M.scoreEventForUser(event, profile)
+        : typeof event.matchScore === "number"
+          ? event.matchScore
+          : 0.75;
+    var label =
+      M && typeof M.getMatchLabel === "function"
+        ? M.getMatchLabel(score)
+        : { text: "Good Match", tier: "good" };
+    return { score: score, label: label };
+  }
+
+  function createCard(event, profile, options) {
+    options = options || {};
+    var cardMode = options.cardMode || "default";
+    var ml = matchScoreAndLabel(event, profile);
+    var label = ml.label;
     var article = document.createElement("article");
     article.className = "event-card";
     article.dataset.eventId = event.id;
@@ -273,18 +289,32 @@
     detail.className = "btn btn-primary btn-small";
     detail.href = "event.html?id=" + encodeURIComponent(event.id);
     detail.textContent = "View Details";
-    var save = document.createElement("button");
-    save.type = "button";
-    save.className = "btn btn-secondary btn-small";
-    save.dataset.action = "save";
-    save.dataset.eventId = event.id;
-    save.textContent = isEventSaved(event.id) ? "★ Saved" : "☆ Save";
-    save.addEventListener("click", function () {
-      var nowSaved = toggleSaved(event.id);
-      save.textContent = nowSaved ? "★ Saved" : "☆ Save";
-    });
     actions.appendChild(detail);
-    actions.appendChild(save);
+
+    if (cardMode === "saved") {
+      var removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "btn btn-secondary btn-small remove-btn";
+      removeBtn.dataset.eventId = event.id;
+      removeBtn.textContent = "Remove";
+      removeBtn.addEventListener("click", function () {
+        toggleSaved(event.id);
+        renderSaved();
+      });
+      actions.appendChild(removeBtn);
+    } else {
+      var save = document.createElement("button");
+      save.type = "button";
+      save.className = "btn btn-secondary btn-small";
+      save.dataset.action = "save";
+      save.dataset.eventId = event.id;
+      save.textContent = isEventSaved(event.id) ? "★ Saved" : "☆ Save";
+      save.addEventListener("click", function () {
+        var nowSaved = toggleSaved(event.id);
+        save.textContent = nowSaved ? "★ Saved" : "☆ Save";
+      });
+      actions.appendChild(save);
+    }
 
     body.appendChild(title);
     body.appendChild(meta);
@@ -329,6 +359,78 @@
     list.forEach(function (ev) {
       grid.appendChild(createCard(ev, profile));
     });
+  }
+
+  function getSavedEventsList() {
+    var ids = getSavedIds();
+    if (ids.length === 0) return [];
+    var all = getAllEvents();
+    var byId = {};
+    all.forEach(function (e) {
+      byId[e.id] = e;
+    });
+    return ids
+      .map(function (id) {
+        return byId[id];
+      })
+      .filter(Boolean);
+  }
+
+  function renderSaved() {
+    var grid = document.getElementById("savedGrid");
+    var empty = document.getElementById("emptyState");
+    var content = document.getElementById("content");
+    if (!grid || !empty || !content) return;
+
+    var titleEl = document.getElementById("emptyStateTitle");
+    var hintEl = document.getElementById("emptyStateHint");
+    var browseBtn = document.getElementById("emptyStateBrowse");
+
+    grid.innerHTML = "";
+    var profile = readProfile();
+    var savedList = getSavedEventsList();
+    var filtered = filterEvents(savedList);
+
+    if (savedList.length === 0) {
+      empty.hidden = false;
+      content.hidden = true;
+      if (titleEl) titleEl.textContent = "No saved events yet";
+      if (hintEl)
+        hintEl.textContent = "Browse events and save the ones you're interested in";
+      if (browseBtn) browseBtn.hidden = false;
+      return;
+    }
+
+    if (filtered.length === 0) {
+      empty.hidden = false;
+      content.hidden = true;
+      if (titleEl) titleEl.textContent = "No events found";
+      if (hintEl) hintEl.textContent = "Try a different filter";
+      if (browseBtn) browseBtn.hidden = true;
+      return;
+    }
+
+    empty.hidden = true;
+    content.hidden = false;
+    filtered.forEach(function (ev) {
+      grid.appendChild(createCard(ev, profile, { cardMode: "saved" }));
+    });
+  }
+
+  function initSavedPage() {
+    document.querySelectorAll(".filter-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        currentFilter = btn.getAttribute("data-filter") || "all";
+        setActiveFilter(btn);
+        renderSaved();
+      });
+    });
+
+    window.setTimeout(function () {
+      var loading = document.getElementById("loading");
+      if (loading) loading.hidden = true;
+      renderSaved();
+    }, 450);
   }
 
   function setActiveFilter(btn) {
@@ -617,6 +719,8 @@
   document.addEventListener("DOMContentLoaded", function () {
     if (document.getElementById("eventContainer")) {
       initEventDetail();
+    } else if (document.getElementById("savedGrid")) {
+      initSavedPage();
     } else if (document.getElementById("submitForm")) {
       initSubmitForm();
     } else {

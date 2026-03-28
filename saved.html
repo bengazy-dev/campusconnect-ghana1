@@ -1,1 +1,62 @@
-<!-- List of bookmarked or saved events for the signed-in user. -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Saved events — CampusConnect</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="has-navbar">
+    <header class="navbar">
+      <a class="navbar__brand" href="index.html">CampusConnect</a>
+      <nav aria-label="Main">
+        <ul class="navbar__links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="saved.html" aria-current="page">Saved</a></li>
+          <li><a href="login.html" id="navLogout">Logout</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="saved-page container">
+      <header class="saved-page__intro">
+        <h1 class="saved-page__title">Your Saved Events</h1>
+        <p class="saved-page__subtext">Events you've bookmarked for later</p>
+      </header>
+
+      <section class="filter-bar" aria-label="Filter saved events">
+        <div class="filter-bar__scroll">
+          <button type="button" class="filter-btn is-active" data-filter="all">All</button>
+          <button type="button" class="filter-btn" data-filter="workshop">Workshops</button>
+          <button type="button" class="filter-btn" data-filter="internship">Internships</button>
+          <button type="button" class="filter-btn" data-filter="scholarship">Scholarships</button>
+          <button type="button" class="filter-btn" data-filter="competition">Competitions</button>
+          <button type="button" class="filter-btn" data-filter="seminar">Seminars</button>
+          <button type="button" class="filter-btn" data-filter="networking">Networking</button>
+        </div>
+      </section>
+
+      <div id="loading" class="dashboard__loading">
+        <div class="spinner" aria-hidden="true"></div>
+        <span>Loading saved events…</span>
+      </div>
+
+      <div id="content" hidden>
+        <div id="savedGrid" class="events-grid"></div>
+      </div>
+
+      <div id="emptyState" class="empty-state empty-state--saved" hidden>
+        <div class="empty-state__icon" aria-hidden="true">📭</div>
+        <h2 id="emptyStateTitle" class="empty-state__title">No saved events yet</h2>
+        <p id="emptyStateHint" class="empty-state__hint">
+          Browse events and save the ones you're interested in
+        </p>
+        <a id="emptyStateBrowse" class="btn btn-primary empty-state__cta" href="index.html"
+          >Browse Events</a
+        >
+      </div>
+    </main>
+
+    <script src="js/events.js"></script>
+  </body>
+</html>
