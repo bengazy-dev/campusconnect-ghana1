@@ -1,1 +1,290 @@
-<!-- First-run profile setup and preferences for new users. -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Your profile — CampusConnect</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="has-navbar">
+    <header class="navbar">
+      <a class="navbar__brand" href="index.html">CampusConnect</a>
+      <nav aria-label="Main">
+        <ul class="navbar__links">
+          <li>
+            <a
+              href="index.html"
+              class="navbar__link--disabled"
+              tabindex="-1"
+              aria-disabled="true"
+              >Home</a
+            >
+          </li>
+          <li>
+            <a
+              href="saved.html"
+              class="navbar__link--disabled"
+              tabindex="-1"
+              aria-disabled="true"
+              >Saved</a
+            >
+          </li>
+          <li>
+            <a
+              href="submit.html"
+              class="navbar__link--disabled"
+              tabindex="-1"
+              aria-disabled="true"
+              >Post an opportunity</a
+            >
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="wizard-page">
+      <div class="wizard-card">
+        <div
+          class="progress-steps"
+          id="progressBar"
+          role="progressbar"
+          aria-valuemin="1"
+          aria-valuemax="6"
+          aria-valuenow="1"
+          aria-label="Onboarding progress"
+        >
+          <div class="progress-step-col">
+            <div class="progress-step active" data-step="1"></div>
+            <span class="progress-step-label">School</span>
+          </div>
+          <div class="progress-step-col">
+            <div class="progress-step" data-step="2"></div>
+            <span class="progress-step-label">Program</span>
+          </div>
+          <div class="progress-step-col">
+            <div class="progress-step" data-step="3"></div>
+            <span class="progress-step-label">Year</span>
+          </div>
+          <div class="progress-step-col">
+            <div class="progress-step" data-step="4"></div>
+            <span class="progress-step-label">Focus</span>
+          </div>
+          <div class="progress-step-col">
+            <div class="progress-step" data-step="5"></div>
+            <span class="progress-step-label">Goals</span>
+          </div>
+          <div class="progress-step-col">
+            <div class="progress-step" data-step="6"></div>
+            <span class="progress-step-label">Format</span>
+          </div>
+        </div>
+
+        <form id="onboardingForm" novalidate>
+          <section id="step1" class="wizard-step" aria-labelledby="step1-heading">
+            <h2 id="step1-heading" class="wizard-card__heading">What institution are you at?</h2>
+            <div class="form-group">
+              <label for="institution">Institution</label>
+              <select id="institution" name="institution" required>
+                <option value="">Select institution</option>
+                <option value="UG">UG</option>
+                <option value="KNUST">KNUST</option>
+                <option value="Ashesi">Ashesi</option>
+                <option value="UCC">UCC</option>
+                <option value="UPSA">UPSA</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <p class="step-error" id="step1Error" role="alert" aria-live="polite"></p>
+          </section>
+
+          <section id="step2" class="wizard-step" hidden aria-labelledby="step2-heading">
+            <h2 id="step2-heading" class="wizard-card__heading">What's your course or program?</h2>
+            <div class="form-group">
+              <label for="course">Course or program</label>
+              <input
+                type="text"
+                id="course"
+                name="course"
+                placeholder="e.g. Computer Science"
+                autocomplete="off"
+              />
+            </div>
+            <p class="step-error" id="step2Error" role="alert" aria-live="polite"></p>
+          </section>
+
+          <section id="step3" class="wizard-step" hidden aria-labelledby="step3-heading">
+            <h2 id="step3-heading" class="wizard-card__heading">What year are you in?</h2>
+            <div class="radio-group" role="radiogroup" aria-labelledby="step3-heading">
+              <div class="radio-item" data-value="1">
+                <input type="radio" name="studyYear" id="year1" value="1" />
+                <label for="year1">1st Year</label>
+              </div>
+              <div class="radio-item" data-value="2">
+                <input type="radio" name="studyYear" id="year2" value="2" />
+                <label for="year2">2nd Year</label>
+              </div>
+              <div class="radio-item" data-value="3">
+                <input type="radio" name="studyYear" id="year3" value="3" />
+                <label for="year3">3rd Year</label>
+              </div>
+              <div class="radio-item" data-value="4">
+                <input type="radio" name="studyYear" id="year4" value="4" />
+                <label for="year4">4th Year</label>
+              </div>
+              <div class="radio-item" data-value="postgrad">
+                <input type="radio" name="studyYear" id="yearPg" value="postgrad" />
+                <label for="yearPg">Postgrad</label>
+              </div>
+            </div>
+            <p class="step-error" id="step3Error" role="alert" aria-live="polite"></p>
+          </section>
+
+          <section id="step4" class="wizard-step" hidden aria-labelledby="step4-heading">
+            <h2 id="step4-heading" class="wizard-card__heading">What are you interested in?</h2>
+            <p class="wizard-card__subtext">Select all that apply</p>
+            <div class="checkbox-group">
+              <div class="checkbox-item" data-value="tech">
+                <input type="checkbox" name="interests" id="int-tech" value="tech" />
+                <label for="int-tech">Tech</label>
+              </div>
+              <div class="checkbox-item" data-value="business">
+                <input type="checkbox" name="interests" id="int-business" value="business" />
+                <label for="int-business">Business</label>
+              </div>
+              <div class="checkbox-item" data-value="health">
+                <input type="checkbox" name="interests" id="int-health" value="health" />
+                <label for="int-health">Health</label>
+              </div>
+              <div class="checkbox-item" data-value="arts">
+                <input type="checkbox" name="interests" id="int-arts" value="arts" />
+                <label for="int-arts">Arts</label>
+              </div>
+              <div class="checkbox-item" data-value="law">
+                <input type="checkbox" name="interests" id="int-law" value="law" />
+                <label for="int-law">Law</label>
+              </div>
+              <div class="checkbox-item" data-value="engineering">
+                <input type="checkbox" name="interests" id="int-eng" value="engineering" />
+                <label for="int-eng">Engineering</label>
+              </div>
+              <div class="checkbox-item" data-value="social-impact">
+                <input type="checkbox" name="interests" id="int-social" value="social-impact" />
+                <label for="int-social">Social Impact</label>
+              </div>
+              <div class="checkbox-item" data-value="finance">
+                <input type="checkbox" name="interests" id="int-finance" value="finance" />
+                <label for="int-finance">Finance</label>
+              </div>
+            </div>
+            <p class="step-error" id="step4Error" role="alert" aria-live="polite"></p>
+          </section>
+
+          <section id="step5" class="wizard-step" hidden aria-labelledby="step5-heading">
+            <h2 id="step5-heading" class="wizard-card__heading">What are your goals?</h2>
+            <div class="checkbox-group">
+              <div class="checkbox-item" data-value="internship">
+                <input type="checkbox" name="goals" id="goal-intern" value="internship" />
+                <label for="goal-intern">Get internship</label>
+              </div>
+              <div class="checkbox-item" data-value="skills">
+                <input type="checkbox" name="goals" id="goal-skills" value="skills" />
+                <label for="goal-skills">Build skills</label>
+              </div>
+              <div class="checkbox-item" data-value="network">
+                <input type="checkbox" name="goals" id="goal-net" value="network" />
+                <label for="goal-net">Network</label>
+              </div>
+              <div class="checkbox-item" data-value="scholarships">
+                <input type="checkbox" name="goals" id="goal-scholar" value="scholarships" />
+                <label for="goal-scholar">Win scholarships</label>
+              </div>
+              <div class="checkbox-item" data-value="business">
+                <input type="checkbox" name="goals" id="goal-biz" value="business" />
+                <label for="goal-biz">Start a business</label>
+              </div>
+              <div class="checkbox-item" data-value="research">
+                <input type="checkbox" name="goals" id="goal-res" value="research" />
+                <label for="goal-res">Research opportunities</label>
+              </div>
+            </div>
+            <p class="step-error" id="step5Error" role="alert" aria-live="polite"></p>
+          </section>
+
+          <section id="step6" class="wizard-step" hidden aria-labelledby="step6-heading">
+            <h2 id="step6-heading" class="wizard-card__heading">What event formats do you prefer?</h2>
+            <div class="checkbox-group">
+              <div class="checkbox-item" data-value="workshops">
+                <input type="checkbox" name="formats" id="fmt-workshops" value="workshops" />
+                <label for="fmt-workshops">Workshops</label>
+              </div>
+              <div class="checkbox-item" data-value="seminars">
+                <input type="checkbox" name="formats" id="fmt-seminars" value="seminars" />
+                <label for="fmt-seminars">Seminars</label>
+              </div>
+              <div class="checkbox-item" data-value="competitions">
+                <input type="checkbox" name="formats" id="fmt-comp" value="competitions" />
+                <label for="fmt-comp">Competitions</label>
+              </div>
+              <div class="checkbox-item" data-value="networking">
+                <input type="checkbox" name="formats" id="fmt-net" value="networking" />
+                <label for="fmt-net">Networking events</label>
+              </div>
+              <div class="checkbox-item" data-value="online">
+                <input type="checkbox" name="formats" id="fmt-online" value="online" />
+                <label for="fmt-online">Online</label>
+              </div>
+              <div class="checkbox-item" data-value="in-person">
+                <input type="checkbox" name="formats" id="fmt-ip" value="in-person" />
+                <label for="fmt-ip">In-person</label>
+              </div>
+            </div>
+            <p class="step-error" id="step6Error" role="alert" aria-live="polite"></p>
+          </section>
+
+          <div class="wizard-nav">
+            <button type="button" class="btn btn-secondary" id="prevBtn" hidden>← Back</button>
+            <span class="wizard-nav__spacer" aria-hidden="true"></span>
+            <button type="button" class="btn btn-primary" id="nextBtn">Next →</button>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <script src="js/onboarding.js"></script>
+    <script>
+      (function () {
+        function syncRadioGroup(name) {
+          var radios = document.querySelectorAll('input[type="radio"][name="' + name + '"]');
+          radios.forEach(function (r) {
+            var item = r.closest(".radio-item");
+            if (item) item.classList.toggle("selected", r.checked);
+          });
+        }
+
+        function syncCheckbox(item) {
+          var input = item.querySelector('input[type="checkbox"]');
+          if (input) item.classList.toggle("selected", input.checked);
+        }
+
+        document.addEventListener("change", function (e) {
+          var t = e.target;
+          if (t.matches && t.matches('.checkbox-item input[type="checkbox"]')) {
+            syncCheckbox(t.closest(".checkbox-item"));
+          }
+          if (t.matches && t.matches('.radio-item input[type="radio"]')) {
+            syncRadioGroup(t.name);
+          }
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+          document.querySelectorAll(".checkbox-item").forEach(syncCheckbox);
+          document.querySelectorAll('input[type="radio"][name="studyYear"]:checked').forEach(
+            function () {
+              syncRadioGroup("studyYear");
+            }
+          );
+        });
+      })();
+    </script>
+  </body>
+</html>
