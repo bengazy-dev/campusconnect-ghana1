@@ -1,1 +1,250 @@
-<!-- User sign-in / authentication page for Campus Connect. -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — CampusConnect</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="has-navbar">
+    <header class="navbar">
+      <a class="navbar__brand" href="index.html">CampusConnect</a>
+      <nav aria-label="Main">
+        <ul class="navbar__links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="saved.html">Saved</a></li>
+          <li><a href="submit.html">Post an opportunity</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="auth-layout auth-layout--60-40 login-page">
+      <section class="auth-hero auth-hero--mobile-visible" aria-labelledby="login-hero-heading">
+        <div>
+          <p class="login-hero__logo">CampusConnect</p>
+          <h1 id="login-hero-heading" class="login-hero__tagline">
+            Stop scrolling lists. Start matching.
+          </h1>
+          <p class="login-hero__desc">
+            We pair you with campus events and opportunities that fit your interests—not endless
+            feeds. Sign in to see your personalized matches.
+          </p>
+          <div class="login-hero__previews" aria-hidden="true">
+            <article class="preview-match">
+              <span class="preview-match__badge">Match</span>
+              <div class="preview-match__body">
+                <h2 class="preview-match__title">Tech Career Mixer</h2>
+                <p class="preview-match__meta">Thu · Great Hall · 94% fit</p>
+              </div>
+            </article>
+            <article class="preview-match">
+              <span class="preview-match__badge">Match</span>
+              <div class="preview-match__body">
+                <h2 class="preview-match__title">Design Jam Weekend</h2>
+                <p class="preview-match__meta">Sat–Sun · Innovation Lab · 88% fit</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <div class="auth-form-wrap">
+        <div class="auth-panel">
+          <div class="auth-tabs" role="tablist" aria-label="Authentication">
+            <button
+              type="button"
+              id="loginTab"
+              class="auth-tabs__btn"
+              role="tab"
+              aria-selected="true"
+              aria-controls="loginFormContainer"
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              id="signupTab"
+              class="auth-tabs__btn"
+              role="tab"
+              aria-selected="false"
+              aria-controls="signupFormContainer"
+            >
+              Sign up
+            </button>
+          </div>
+
+          <div id="loginFormContainer" role="tabpanel" aria-labelledby="loginTab">
+            <h2 class="auth-form__title">Welcome back</h2>
+            <form id="loginForm" class="auth-form" novalidate>
+              <div class="form-group">
+                <label for="loginEmail">Email</label>
+                <input
+                  type="email"
+                  id="loginEmail"
+                  name="email"
+                  autocomplete="email"
+                  placeholder="you@university.edu.gh"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input
+                  type="password"
+                  id="loginPassword"
+                  name="password"
+                  autocomplete="current-password"
+                  required
+                />
+              </div>
+              <div id="loginError" class="alert alert-error" role="alert" hidden></div>
+              <button type="submit" class="btn btn-primary btn--full">Login</button>
+            </form>
+          </div>
+
+          <div id="signupFormContainer" role="tabpanel" aria-labelledby="signupTab" hidden>
+            <div id="roleSelectionStep">
+              <h2 class="auth-form__title">Join CampusConnect</h2>
+              <p class="signup-role__subtext">How will you use the platform?</p>
+              <div class="role-cards">
+                <button
+                  type="button"
+                  id="roleStudentCard"
+                  class="role-card"
+                  data-role="student"
+                  aria-pressed="false"
+                >
+                  <span class="role-card__icon" aria-hidden="true">🎓</span>
+                  <span class="role-card__title">I'm a Student</span>
+                  <span class="role-card__desc"
+                    >Discover opportunities matched to my interests</span
+                  >
+                </button>
+                <button
+                  type="button"
+                  id="roleOrganizerCard"
+                  class="role-card"
+                  data-role="organizer"
+                  aria-pressed="false"
+                >
+                  <span class="role-card__icon" aria-hidden="true">🏢</span>
+                  <span class="role-card__title">I'm an Organizer</span>
+                  <span class="role-card__desc">Post events and reach the right students</span>
+                </button>
+              </div>
+            </div>
+
+            <div id="signupFormStep" hidden>
+              <button type="button" id="backToRoleBtn" class="back-link">
+                ← Choose different role
+              </button>
+              <p id="roleBadge" class="role-badge" aria-live="polite"></p>
+              <form id="signupForm" class="auth-form" data-role="" novalidate>
+                <div class="form-group">
+                  <label for="signupName">Name</label>
+                  <input type="text" id="signupName" name="name" autocomplete="name" required />
+                </div>
+                <div class="form-group">
+                  <label for="signupEmail">Email</label>
+                  <input
+                    type="email"
+                    id="signupEmail"
+                    name="email"
+                    autocomplete="email"
+                    placeholder="you@university.edu.gh"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="signupPassword">Password</label>
+                  <input
+                    type="password"
+                    id="signupPassword"
+                    name="password"
+                    autocomplete="new-password"
+                    required
+                  />
+                </div>
+                <div id="signupError" class="alert alert-error" role="alert" hidden></div>
+                <button type="submit" class="btn btn-primary btn--full">Create Account</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="js/auth.js"></script>
+    <script>
+      (function () {
+        var loginTab = document.getElementById("loginTab");
+        var signupTab = document.getElementById("signupTab");
+        var loginFormContainer = document.getElementById("loginFormContainer");
+        var signupFormContainer = document.getElementById("signupFormContainer");
+        var roleSelectionStep = document.getElementById("roleSelectionStep");
+        var signupFormStep = document.getElementById("signupFormStep");
+        var roleStudentCard = document.getElementById("roleStudentCard");
+        var roleOrganizerCard = document.getElementById("roleOrganizerCard");
+        var backToRoleBtn = document.getElementById("backToRoleBtn");
+        var signupForm = document.getElementById("signupForm");
+        var roleBadge = document.getElementById("roleBadge");
+
+        function showLoginPanel() {
+          loginTab.setAttribute("aria-selected", "true");
+          signupTab.setAttribute("aria-selected", "false");
+          loginFormContainer.hidden = false;
+          signupFormContainer.hidden = true;
+        }
+
+        function showSignupPanel() {
+          loginTab.setAttribute("aria-selected", "false");
+          signupTab.setAttribute("aria-selected", "true");
+          loginFormContainer.hidden = true;
+          signupFormContainer.hidden = false;
+          roleSelectionStep.hidden = false;
+          signupFormStep.hidden = true;
+          roleStudentCard.classList.remove("is-selected");
+          roleOrganizerCard.classList.remove("is-selected");
+          roleStudentCard.setAttribute("aria-pressed", "false");
+          roleOrganizerCard.setAttribute("aria-pressed", "false");
+          signupForm.setAttribute("data-role", "");
+          roleBadge.textContent = "";
+        }
+
+        function selectRole(role) {
+          var label = role === "student" ? "Student" : "Organizer";
+          signupForm.setAttribute("data-role", role);
+          roleBadge.textContent = "Role: " + label;
+          roleSelectionStep.hidden = true;
+          signupFormStep.hidden = false;
+          roleStudentCard.classList.toggle("is-selected", role === "student");
+          roleOrganizerCard.classList.toggle("is-selected", role === "organizer");
+          roleStudentCard.setAttribute("aria-pressed", role === "student" ? "true" : "false");
+          roleOrganizerCard.setAttribute("aria-pressed", role === "organizer" ? "true" : "false");
+        }
+
+        function backToRoleSelection() {
+          signupFormStep.hidden = true;
+          roleSelectionStep.hidden = false;
+          signupForm.setAttribute("data-role", "");
+          roleBadge.textContent = "";
+          roleStudentCard.classList.remove("is-selected");
+          roleOrganizerCard.classList.remove("is-selected");
+          roleStudentCard.setAttribute("aria-pressed", "false");
+          roleOrganizerCard.setAttribute("aria-pressed", "false");
+        }
+
+        loginTab.addEventListener("click", showLoginPanel);
+        signupTab.addEventListener("click", showSignupPanel);
+
+        roleStudentCard.addEventListener("click", function () {
+          selectRole("student");
+        });
+        roleOrganizerCard.addEventListener("click", function () {
+          selectRole("organizer");
+        });
+        backToRoleBtn.addEventListener("click", backToRoleSelection);
+      })();
+    </script>
+  </body>
+</html>
