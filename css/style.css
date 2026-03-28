@@ -407,20 +407,23 @@ textarea::placeholder {
 /* Event cards                                                                */
 /* -------------------------------------------------------------------------- */
 
-.event-grid {
+.event-grid,
+.events-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.25rem;
 }
 
 @media (min-width: 768px) {
-  .event-grid {
+  .event-grid,
+  .events-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (min-width: 1024px) {
-  .event-grid {
+  .event-grid,
+  .events-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
@@ -440,10 +443,40 @@ textarea::placeholder {
   border-color: #404040;
 }
 
-.event-card__category {
+.event-card__match {
   display: inline-block;
   align-self: flex-start;
   margin: 1rem 1rem 0;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+}
+
+.event-card__match--perfect {
+  color: #b8f0d4;
+  background: rgba(0, 107, 63, 0.35);
+  border: 1px solid rgba(0, 107, 63, 0.65);
+}
+
+.event-card__match--great {
+  color: var(--bg-dark);
+  background: var(--secondary);
+  border: 1px solid rgba(252, 209, 22, 0.6);
+}
+
+.event-card__match--good {
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+}
+
+.event-card__category {
+  display: inline-block;
+  align-self: flex-start;
+  margin: 0 1rem 0;
   padding: 0.25rem 0.65rem;
   font-size: 0.75rem;
   font-weight: 700;
@@ -459,6 +492,17 @@ textarea::placeholder {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.event-card__desc {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .event-card__title {
@@ -1047,4 +1091,169 @@ textarea::placeholder {
 
 .wizard-nav .btn {
   min-width: 7rem;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Student dashboard                                                          */
+/* -------------------------------------------------------------------------- */
+
+.dashboard {
+  padding: 1.25rem 1rem 2.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.dashboard-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard-hero {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.25rem;
+  }
+}
+
+.user-avatar {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--bg-dark);
+  background: var(--secondary);
+  border-radius: 50%;
+}
+
+.dashboard-hero__text {
+  min-width: 0;
+}
+
+.dashboard-hero #userName {
+  margin: 0;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.dashboard-hero #userInstitution {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+}
+
+.filter-bar {
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.filter-bar__scroll {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.35rem;
+  margin: 0 -0.25rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.filter-bar__scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.filter-bar__scroll::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.filter-btn {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition),
+    background var(--transition);
+}
+
+.filter-btn:hover {
+  color: var(--text-primary);
+  border-color: #555;
+}
+
+.filter-btn.is-active {
+  color: var(--text-primary);
+  background: rgba(0, 107, 63, 0.3);
+  border-color: var(--primary);
+}
+
+.dashboard__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  min-height: 200px;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+}
+
+.dashboard__loading[hidden] {
+  display: none !important;
+}
+
+#content[hidden] {
+  display: none !important;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 3rem 1.5rem;
+  color: var(--text-secondary);
+}
+
+.empty-state[hidden] {
+  display: none !important;
+}
+
+.empty-state__icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.empty-state__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-state__hint {
+  margin: 0;
+  font-size: 0.9375rem;
+  max-width: 28ch;
 }
