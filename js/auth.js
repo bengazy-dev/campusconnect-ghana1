@@ -32,7 +32,7 @@
   var roleSelectionStep;
   var signupFormStep;
   var verificationStep;
-  var verificationSubtext;
+  var verificationEmail;
   var verificationCode;
   var verifyBtn;
   var verificationError;
@@ -53,13 +53,35 @@
   function showError(el, message) {
     if (!el) return;
     el.textContent = message || "";
-    el.hidden = !message;
+    var visible = !!message;
+    el.hidden = !visible;
+    el.classList.toggle("hidden", !visible);
   }
 
   function hideError(el) {
     if (!el) return;
     el.textContent = "";
     el.hidden = true;
+    el.classList.add("hidden");
+  }
+
+  function logInsForgeAuth(label, res) {
+    try {
+      var out = { label: label, error: null, data: null };
+      if (res && res.error) {
+        out.error = {
+          message: res.error.message,
+          statusCode: res.error.statusCode,
+          code: res.error.error,
+        };
+      }
+      if (res && res.data != null) {
+        out.data = JSON.parse(JSON.stringify(res.data));
+      }
+      console.log("[InsForge]", out);
+    } catch (logErr) {
+      console.log("[InsForge]", label, "(could not serialize)", res, logErr);
+    }
   }
 
   function showInlineMessage(el, message, variant) {
@@ -214,8 +236,14 @@
     }
   }
 
+  function setVerificationStepVisible(visible) {
+    if (!verificationStep) return;
+    verificationStep.hidden = !visible;
+    verificationStep.classList.toggle("hidden", !visible);
+  }
+
   function hideVerificationStep() {
-    if (verificationStep) verificationStep.hidden = true;
+    setVerificationStepVisible(false);
     hideError(verificationError);
     if (verificationCode) verificationCode.value = "";
   }
@@ -224,11 +252,13 @@
     hideError(signupError);
     if (roleSelectionStep) roleSelectionStep.hidden = true;
     if (signupFormStep) signupFormStep.hidden = true;
-    if (verificationStep) verificationStep.hidden = false;
-    if (verificationSubtext) {
-      verificationSubtext.textContent =
-        "We sent a 6-digit code to " + (email || "your email") + ". Enter it below to finish creating your account.";
+    if (verificationEmail) verificationEmail.textContent = email || "";
+    try {
+      sessionStorage.setItem("campusconnect_pending_verify_email", email || "");
+    } catch (e0) {
+      /* ignore */
     }
+    setVerificationStepVisible(true);
     hideError(verificationError);
     if (verificationCode) verificationCode.value = "";
     if (verificationCode) verificationCode.focus();
@@ -423,11 +453,29 @@
       .then(function (ctx) {
         var ins = ctx.ins;
         var res = ctx.res;
-        if (res.error) throw res.error;
-        var d = res.data;
-        if (!d || !d.user) throw new Error("Could not create account.");
+        logInsForgeAuth("auth.signUp", res);
 
-        if (d.requireEmailVerification && !d.accessToken) {
+        if (res.error) throw res.error;
+
+        var d = res.data;
+        if (d == null) {
+          throw new Error("Could not create account. No response data.");
+        }
+
+        var hasToken = !!d.accessToken;
+        var requireFlag =
+          d.requireEmailVerification === true ||
+          d.requireEmailVerification === "true" ||
+          d.requireEmailVerification === 1;
+        var u = d.user;
+        var userPresent = u != null;
+        var userNeedsVerify = userPresent && !isEmailVerified(u);
+
+        /* InsForge often returns no `user` in `data` when only a verification email was sent. */
+        var verificationPending =
+          requireFlag || (!hasToken && (userNeedsVerify || !userPresent));
+
+        if (verificationPending) {
           try {
             sessionStorage.setItem(
               PENDING_SIGNUP_KEY,
@@ -441,21 +489,25 @@
           return;
         }
 
-        if (!d.accessToken) {
+        if (!userPresent) {
+          throw new Error("Could not create account.");
+        }
+
+        if (!hasToken) {
           throw new Error("Could not sign you in. Try again.");
         }
 
-        if (!isEmailVerified(d.user)) {
+        if (!isEmailVerified(u)) {
           throw new Error("Please verify your email before continuing.");
         }
 
         return ensureUserInTable(ins, {
-          id: d.user.id,
+          id: u.id,
           email: email,
           name: name,
           role: role,
         }).then(function () {
-          var sessionUser = { id: d.user.id, email: email, name: name, role: role };
+          var sessionUser = { id: u.id, email: email, name: name, role: role };
           writeSession(sessionUser);
           setLoading(signupSubmitBtn, false);
           redirectAfterSignup(sessionUser);
@@ -477,9 +529,28 @@
       pending = null;
     }
 
-    if (!pending || !pending.email) {
+    var emailForVerify =
+      (pending && pending.email) ||
+      (function () {
+        try {
+          return sessionStorage.getItem("campusconnect_pending_verify_email") || "";
+        } catch (e2) {
+          return "";
+        }
+      })() ||
+      ((verificationEmail && verificationEmail.textContent.trim()) || "");
+
+    if (!emailForVerify) {
       showError(verificationError, "Sign up session expired. Start over from Sign up.");
       return;
+    }
+
+    pending = pending && typeof pending === "object" ? pending : {};
+    pending.email = emailForVerify;
+    if (!pending.name) pending.name = (signupName && signupName.value.trim()) || "User";
+    if (!pending.role) {
+      pending.role =
+        (signupForm && signupForm.getAttribute("data-role")) || selectedRole || "student";
     }
     if (code.length !== 6) {
       showError(verificationError, "Enter the 6-digit code from your email.");
@@ -491,7 +562,7 @@
       .then(function (ins) {
         return ins.auth
           .verifyEmail({
-            email: pending.email,
+            email: emailForVerify,
             otp: code,
           })
           .then(function (res) {
@@ -499,6 +570,7 @@
           });
       })
       .then(function (ctx) {
+        logInsForgeAuth("auth.verifyEmail", ctx.res);
         if (ctx.res.error) throw ctx.res.error;
         var vd = ctx.res.data;
         if (!vd || !vd.user) throw new Error("Verification failed.");
@@ -648,6 +720,7 @@
     }
     try {
       sessionStorage.removeItem(PENDING_SIGNUP_KEY);
+      sessionStorage.removeItem("campusconnect_pending_verify_email");
     } catch (e2) {
       /* ignore */
     }
@@ -723,7 +796,7 @@
     roleSelectionStep = document.getElementById("roleSelectionStep");
     signupFormStep = document.getElementById("signupFormStep");
     verificationStep = document.getElementById("verificationStep");
-    verificationSubtext = document.getElementById("verificationSubtext");
+    verificationEmail = document.getElementById("verificationEmail");
     verificationCode = document.getElementById("verificationCode");
     verifyBtn = document.getElementById("verifyBtn");
     verificationError = document.getElementById("verificationError");

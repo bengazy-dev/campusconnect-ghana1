@@ -904,6 +904,10 @@ textarea::placeholder {
   margin-bottom: 1rem;
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* Mobile: show compact hero strip */
 @media (max-width: 1023px) {
   .auth-hero--mobile-visible {
