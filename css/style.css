@@ -1384,3 +1384,82 @@ textarea::placeholder {
 #eventLoading[hidden] {
   display: none !important;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Submit (organizer) form                                                    */
+/* -------------------------------------------------------------------------- */
+
+.container.container--submit {
+  max-width: 700px;
+}
+
+.submit-page {
+  padding: 1.5rem 1rem 3rem;
+}
+
+.submit-card {
+  padding: 1.75rem 1.5rem 2rem;
+}
+
+.submit-card__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.submit-card__subtext {
+  margin: 0 0 1.5rem;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.submit-fieldset {
+  margin: 0 0 1.5rem;
+  padding: 0;
+  border: none;
+}
+
+.submit-legend {
+  padding: 0;
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.submit-targeting {
+  margin: 0 0 1.5rem;
+}
+
+.submit-targeting__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.submit-targeting__label {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.submit-targeting .checkbox-group {
+  margin-bottom: 1.25rem;
+}
+
+.submit-actions {
+  margin-bottom: 1rem;
+}
+
+#submitForm #submitSuccess,
+#submitForm #submitError {
+  margin-top: 1rem;
+}
+
+#submitForm #submitSuccess[hidden],
+#submitForm #submitError[hidden] {
+  display: none !important;
+}

@@ -1,1 +1,230 @@
-<!-- Form to submit or propose a new campus event. -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Post an opportunity — CampusConnect</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="has-navbar">
+    <header class="navbar">
+      <a class="navbar__brand" href="index.html">CampusConnect</a>
+      <nav aria-label="Main">
+        <ul class="navbar__links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="login.html" id="navLogout">Logout</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="submit-page container container--submit">
+      <div class="submit-card card">
+        <h1 class="submit-card__title">Post an Opportunity</h1>
+        <p class="submit-card__subtext">Reach students who match your event</p>
+
+        <form id="submitForm" novalidate>
+          <fieldset class="submit-fieldset">
+            <legend class="submit-legend">Basic info</legend>
+            <div class="form-group">
+              <label for="eventTitle">Title</label>
+              <input
+                type="text"
+                id="eventTitle"
+                name="title"
+                placeholder="e.g. Google Developer Summit 2026"
+                autocomplete="off"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="eventDescription">Description</label>
+              <textarea
+                id="eventDescription"
+                name="description"
+                rows="5"
+                placeholder="What will students gain? Include requirements and links if needed."
+                required
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label for="eventDate">Date</label>
+              <input type="date" id="eventDate" name="date" required />
+            </div>
+          </fieldset>
+
+          <fieldset class="submit-fieldset">
+            <legend class="submit-legend">Categorization</legend>
+            <div class="form-group">
+              <label for="eventCategory">Category</label>
+              <select id="eventCategory" name="category" required>
+                <option value="">Select category</option>
+                <option value="workshop">Workshop</option>
+                <option value="seminar">Seminar</option>
+                <option value="competition">Competition</option>
+                <option value="internship">Internship</option>
+                <option value="scholarship">Scholarship</option>
+                <option value="networking">Networking</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="eventFormat">Format</label>
+              <select id="eventFormat" name="format" required>
+                <option value="">Select format</option>
+                <option value="in-person">In-person</option>
+                <option value="online">Online</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="eventInstitution">Institution</label>
+              <select id="eventInstitution" name="institution" required>
+                <option value="">Select institution</option>
+                <option value="open">Open to all</option>
+                <option value="UG">UG</option>
+                <option value="KNUST">KNUST</option>
+                <option value="Ashesi">Ashesi</option>
+                <option value="UCC">UCC</option>
+                <option value="UPSA">UPSA</option>
+              </select>
+            </div>
+          </fieldset>
+
+          <section class="submit-targeting" aria-labelledby="targeting-heading">
+            <h2 id="targeting-heading" class="submit-targeting__title">Who should see this?</h2>
+
+            <p class="submit-targeting__label">Target fields</p>
+            <div class="checkbox-group">
+              <div class="checkbox-item" data-value="tech">
+                <input type="checkbox" name="targetFields" id="tf-tech" value="tech" />
+                <label for="tf-tech">Tech</label>
+              </div>
+              <div class="checkbox-item" data-value="business">
+                <input type="checkbox" name="targetFields" id="tf-business" value="business" />
+                <label for="tf-business">Business</label>
+              </div>
+              <div class="checkbox-item" data-value="health">
+                <input type="checkbox" name="targetFields" id="tf-health" value="health" />
+                <label for="tf-health">Health</label>
+              </div>
+              <div class="checkbox-item" data-value="arts">
+                <input type="checkbox" name="targetFields" id="tf-arts" value="arts" />
+                <label for="tf-arts">Arts</label>
+              </div>
+              <div class="checkbox-item" data-value="law">
+                <input type="checkbox" name="targetFields" id="tf-law" value="law" />
+                <label for="tf-law">Law</label>
+              </div>
+              <div class="checkbox-item" data-value="engineering">
+                <input type="checkbox" name="targetFields" id="tf-eng" value="engineering" />
+                <label for="tf-eng">Engineering</label>
+              </div>
+              <div class="checkbox-item" data-value="social-impact">
+                <input type="checkbox" name="targetFields" id="tf-social" value="social-impact" />
+                <label for="tf-social">Social Impact</label>
+              </div>
+              <div class="checkbox-item" data-value="finance">
+                <input type="checkbox" name="targetFields" id="tf-finance" value="finance" />
+                <label for="tf-finance">Finance</label>
+              </div>
+              <div class="checkbox-item" data-value="all">
+                <input type="checkbox" name="targetFields" id="tf-all" value="all" />
+                <label for="tf-all">All fields</label>
+              </div>
+            </div>
+
+            <p class="submit-targeting__label">Eligible years</p>
+            <div class="checkbox-group">
+              <div class="checkbox-item" data-value="any">
+                <input type="checkbox" name="eligibleYears" id="ey-any" value="any" />
+                <label for="ey-any">Any year</label>
+              </div>
+              <div class="checkbox-item" data-value="1">
+                <input type="checkbox" name="eligibleYears" id="ey-1" value="1" />
+                <label for="ey-1">1st Year</label>
+              </div>
+              <div class="checkbox-item" data-value="2plus">
+                <input type="checkbox" name="eligibleYears" id="ey-2p" value="2plus" />
+                <label for="ey-2p">2nd+</label>
+              </div>
+              <div class="checkbox-item" data-value="3plus">
+                <input type="checkbox" name="eligibleYears" id="ey-3p" value="3plus" />
+                <label for="ey-3p">3rd+</label>
+              </div>
+              <div class="checkbox-item" data-value="final">
+                <input type="checkbox" name="eligibleYears" id="ey-final" value="final" />
+                <label for="ey-final">Final Year</label>
+              </div>
+              <div class="checkbox-item" data-value="postgrad">
+                <input type="checkbox" name="eligibleYears" id="ey-pg" value="postgrad" />
+                <label for="ey-pg">Postgrad</label>
+              </div>
+            </div>
+          </section>
+
+          <div class="submit-actions">
+            <button type="submit" class="btn btn-primary btn--full">Post Event</button>
+          </div>
+
+          <div id="submitSuccess" class="alert alert-success" role="status" hidden>
+            ✅ Event posted! Students will see it in their feed.
+          </div>
+
+          <div id="submitError" class="alert alert-error" role="alert" hidden></div>
+        </form>
+      </div>
+    </main>
+
+    <script src="js/events.js"></script>
+    <script>
+      (function () {
+        function syncCheckbox(item) {
+          var input = item.querySelector('input[type="checkbox"]');
+          if (input) item.classList.toggle("selected", input.checked);
+        }
+
+        document.addEventListener("change", function (e) {
+          var t = e.target;
+          if (!t.matches || !t.matches('.checkbox-item input[type="checkbox"]')) return;
+          var item = t.closest(".checkbox-item");
+          if (!item) return;
+
+          if (t.id === "tf-all" && t.checked) {
+            document.querySelectorAll('input[name="targetFields"]').forEach(function (el) {
+              if (el.id !== "tf-all") {
+                el.checked = false;
+                syncCheckbox(el.closest(".checkbox-item"));
+              }
+            });
+          } else if (t.name === "targetFields" && t.id !== "tf-all" && t.checked) {
+            var allCb = document.getElementById("tf-all");
+            if (allCb) {
+              allCb.checked = false;
+              syncCheckbox(allCb.closest(".checkbox-item"));
+            }
+          }
+
+          if (t.id === "ey-any" && t.checked) {
+            document.querySelectorAll('input[name="eligibleYears"]').forEach(function (el) {
+              if (el.id !== "ey-any") {
+                el.checked = false;
+                syncCheckbox(el.closest(".checkbox-item"));
+              }
+            });
+          } else if (t.name === "eligibleYears" && t.id !== "ey-any" && t.checked) {
+            var anyEy = document.getElementById("ey-any");
+            if (anyEy) {
+              anyEy.checked = false;
+              syncCheckbox(anyEy.closest(".checkbox-item"));
+            }
+          }
+
+          syncCheckbox(item);
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+          document.querySelectorAll("#submitForm .checkbox-item").forEach(syncCheckbox);
+        });
+      })();
+    </script>
+  </body>
+</html>

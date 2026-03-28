@@ -120,10 +120,32 @@
     },
   ];
 
+  function getPostedEvents() {
+    try {
+      var raw = localStorage.getItem("campusconnect_posted_events");
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function setPostedEvents(arr) {
+    try {
+      localStorage.setItem("campusconnect_posted_events", JSON.stringify(arr));
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function getAllEvents() {
+    return mockEvents.concat(getPostedEvents());
+  }
+
   function getEventById(id) {
     if (!id) return null;
-    for (var i = 0; i < mockEvents.length; i++) {
-      if (mockEvents[i].id === id) return mockEvents[i];
+    var all = getAllEvents();
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].id === id) return all[i];
     }
     return null;
   }
@@ -294,7 +316,7 @@
 
     grid.innerHTML = "";
     var profile = readProfile();
-    var list = filterEvents(mockEvents);
+    var list = filterEvents(getAllEvents());
 
     if (list.length === 0) {
       empty.hidden = false;
@@ -453,9 +475,150 @@
     }, 450);
   }
 
+  var TARGET_FIELD_LABEL = {
+    tech: "Tech",
+    business: "Business",
+    health: "Health",
+    arts: "Arts",
+    law: "Law",
+    engineering: "Engineering",
+    "social-impact": "Social Impact",
+    finance: "Finance",
+    all: "All fields",
+  };
+
+  var YEAR_LABEL = {
+    any: "Any year",
+    "1": "1st Year",
+    "2plus": "2nd+",
+    "3plus": "3rd+",
+    final: "Final Year",
+    postgrad: "Postgrad",
+  };
+
+  function formatDateDisplay(iso) {
+    if (!iso) return "";
+    var d = new Date(iso + "T12:00:00");
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("en-GB", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  function initSubmitForm() {
+    var form = document.getElementById("submitForm");
+    if (!form) return;
+    var successEl = document.getElementById("submitSuccess");
+    var errorEl = document.getElementById("submitError");
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (successEl) successEl.hidden = true;
+      if (errorEl) {
+        errorEl.hidden = true;
+        errorEl.textContent = "";
+      }
+
+      var titleEl = document.getElementById("eventTitle");
+      var descEl = document.getElementById("eventDescription");
+      var dateEl = document.getElementById("eventDate");
+      var catEl = document.getElementById("eventCategory");
+      var fmtEl = document.getElementById("eventFormat");
+      var instEl = document.getElementById("eventInstitution");
+
+      var title = titleEl ? titleEl.value.trim() : "";
+      var desc = descEl ? descEl.value.trim() : "";
+      var date = dateEl ? dateEl.value : "";
+      var cat = catEl ? catEl.value : "";
+      var fmt = fmtEl ? fmtEl.value : "";
+      var inst = instEl ? instEl.value : "";
+
+      var tf = form.querySelectorAll('input[name="targetFields"]:checked');
+      var ey = form.querySelectorAll('input[name="eligibleYears"]:checked');
+
+      function showErr(msg) {
+        if (errorEl) {
+          errorEl.textContent = msg;
+          errorEl.hidden = false;
+        }
+      }
+
+      if (!title) return showErr("Please enter a title.");
+      if (!desc) return showErr("Please enter a description.");
+      if (!date) return showErr("Please choose a date.");
+      if (!cat) return showErr("Please select a category.");
+      if (!fmt) return showErr("Please select a format.");
+      if (!inst) return showErr("Please select an institution.");
+      if (tf.length === 0) return showErr("Select at least one target field.");
+      if (ey.length === 0) return showErr("Select at least one eligible year option.");
+
+      var tags = [];
+      var hasAll = false;
+      Array.prototype.forEach.call(tf, function (inp) {
+        if (inp.value === "all") hasAll = true;
+      });
+      if (hasAll) {
+        tags = ["All fields"];
+      } else {
+        Array.prototype.forEach.call(tf, function (inp) {
+          tags.push(TARGET_FIELD_LABEL[inp.value] || inp.value);
+        });
+      }
+
+      var years = [];
+      Array.prototype.forEach.call(ey, function (inp) {
+        years.push(YEAR_LABEL[inp.value] || inp.value);
+      });
+
+      var catText = catEl.options[catEl.selectedIndex].text;
+      var fmtText = fmtEl.options[fmtEl.selectedIndex].text;
+      var instText = instEl.options[instEl.selectedIndex].text;
+
+      var paragraphs = desc.split(/\n\s*\n/).filter(function (p) {
+        return p.trim().length > 0;
+      });
+      if (paragraphs.length === 0) paragraphs = [desc];
+
+      var newEvent = {
+        id: "p" + Date.now(),
+        filter: cat,
+        category: catText.toUpperCase(),
+        title: title,
+        date: formatDateDisplay(date),
+        format: fmtText,
+        institution: instText,
+        description: desc,
+        paragraphs: paragraphs,
+        tags: tags,
+        eligibleYears: years.join(", "),
+        organizer: "Posted via CampusConnect",
+        matchScore: 0.82,
+      };
+
+      var posted = getPostedEvents();
+      posted.push(newEvent);
+      setPostedEvents(posted);
+
+      form.reset();
+      document.querySelectorAll("#submitForm .checkbox-item").forEach(function (item) {
+        item.classList.remove("selected");
+      });
+
+      if (successEl) {
+        successEl.hidden = false;
+        successEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    });
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     if (document.getElementById("eventContainer")) {
       initEventDetail();
+    } else if (document.getElementById("submitForm")) {
+      initSubmitForm();
     } else {
       initDashboard();
     }
