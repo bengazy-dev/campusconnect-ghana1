@@ -230,10 +230,24 @@
         : typeof event.matchScore === "number"
           ? event.matchScore
           : 0.75;
-    var label =
-      M && typeof M.getMatchLabel === "function"
-        ? M.getMatchLabel(score)
-        : { text: "Good Match", tier: "good" };
+    var label;
+    if (M && typeof M.getMatchLabelWithTier === "function") {
+      label = M.getMatchLabelWithTier(score);
+    } else if (M && typeof M.getMatchLabel === "function") {
+      var t = M.getMatchLabel(score);
+      label =
+        typeof t === "string"
+          ? t
+            ? t === "Perfect Match"
+              ? { text: t, tier: "perfect" }
+              : t === "Great Match"
+                ? { text: t, tier: "great" }
+                : { text: t, tier: "good" }
+            : { text: "Good Match", tier: "good" }
+          : t;
+    } else {
+      label = { text: "Good Match", tier: "good" };
+    }
     return { score: score, label: label };
   }
 
