@@ -1,167 +1,212 @@
 // Loading, filtering, displaying, and interacting with event listings and detail.
 
 (function () {
+  var USER_KEY = "campusconnect_user";
+  var ONBOARDING_KEY = "campusconnect_onboarding";
+  var SAVED_KEY = "campusconnect_saved_events";
+  var POSTED_KEY = "campusconnect_posted_events";
+
   var M = window.CampusConnectMatching;
 
-  var mockEvents = [
+  const sampleEvents = [
     {
-      id: "e1",
-      filter: "workshop",
-      category: "WORKSHOP",
-      title: "Full-Stack Web Sprint",
-      date: "Sat, Apr 5",
-      format: "In-person",
+      id: "1",
+      title: "Google Developer Summit 2026",
+      description:
+        "Join us for workshops on Android, Cloud, and ML. Network with Google engineers and fellow developers.",
+      date: "2026-04-15",
+      category: "workshop",
+      targetFields: ["Tech", "Engineering"],
+      eligibleYears: ["any"],
+      format: "hybrid",
+      institution: "all",
+      organizerName: "GDG Accra",
+    },
+    {
+      id: "2",
+      title: "MasterCard Foundation Scholarship",
+      description:
+        "Full scholarship for academically talented students with financial need. Covers tuition, accommodation, and stipend.",
+      date: "2026-05-01",
+      category: "scholarship",
+      targetFields: ["All"],
+      eligibleYears: ["1", "2"],
+      format: "online",
+      institution: "all",
+      organizerName: "MasterCard Foundation",
+    },
+    {
+      id: "3",
+      title: "Ghana Health Hackathon",
+      description:
+        "Build solutions for healthcare challenges in Ghana. Prizes worth GHS 50,000.",
+      date: "2026-04-25",
+      category: "competition",
+      targetFields: ["Tech", "Health", "Engineering"],
+      eligibleYears: ["any"],
+      format: "in-person",
+      institution: "all",
+      organizerName: "Ghana Health Service",
+    },
+    {
+      id: "4",
+      title: "Deloitte Graduate Internship",
+      description:
+        "12-week paid internship program for penultimate and final year students.",
+      date: "2026-06-01",
+      category: "internship",
+      targetFields: ["Business", "Finance", "Law"],
+      eligibleYears: ["3", "4"],
+      format: "in-person",
+      institution: "all",
+      organizerName: "Deloitte Ghana",
+    },
+    {
+      id: "5",
+      title: "KNUST Engineering Career Fair",
+      description:
+        "Meet top employers recruiting engineering talent. On-spot interviews available.",
+      date: "2026-04-20",
+      category: "networking",
+      targetFields: ["Engineering", "Tech"],
+      eligibleYears: ["3", "4", "postgrad"],
+      format: "in-person",
       institution: "KNUST",
-      description:
-        "Build a small app end-to-end with mentors. Great for students who want hands-on coding practice and portfolio pieces.",
-      paragraphs: [
-        "Build a small app end-to-end with mentors. Great for students who want hands-on coding practice and portfolio pieces.",
-        "Sessions run in three-hour blocks with code reviews and a demo day at the end. Laptops required; food provided.",
-      ],
-      tags: ["Tech", "Engineering"],
-      eligibleYears: "2nd–4th Year, Postgrad",
-      organizer: "KNUST Tech Society",
-      matchScore: 0.91,
+      organizerName: "KNUST Career Services",
     },
     {
-      id: "e2",
-      filter: "internship",
-      category: "INTERNSHIP",
-      title: "Summer Analyst Program",
-      date: "Apply by Apr 20",
-      format: "Hybrid",
-      institution: "UPSA",
+      id: "6",
+      title: "UI/UX Design Masterclass",
       description:
-        "Structured internship with rotations in product and data. Open to penultimate-year students with strong analytical skills.",
-      paragraphs: [
-        "Structured internship with rotations in product and data. Open to penultimate-year students with strong analytical skills.",
-        "You will work with a mentor, present a capstone, and may receive a return offer for top performers.",
-      ],
-      tags: ["Business", "Finance"],
-      eligibleYears: "Penultimate year",
-      organizer: "Career Services Consortium",
-      matchScore: 0.78,
+        "Learn modern design principles from industry experts. Certificate included.",
+      date: "2026-04-18",
+      category: "workshop",
+      targetFields: ["Tech", "Arts"],
+      eligibleYears: ["any"],
+      format: "online",
+      institution: "all",
+      organizerName: "Design Lab Accra",
     },
     {
-      id: "e3",
-      filter: "scholarship",
-      category: "SCHOLARSHIP",
-      title: "STEM Excellence Award",
-      date: "Deadline May 1",
-      format: "Online",
-      institution: "Open (Ghana universities)",
+      id: "7",
+      title: "Hult Prize Campus Round",
       description:
-        "Merit-based support for STEM majors. Includes mentorship and a community of past recipients.",
-      paragraphs: [
-        "Merit-based support for STEM majors. Includes mentorship and a community of past recipients.",
-        "Shortlisted applicants complete a short video interview; awards are announced before semester break.",
-      ],
-      tags: ["Tech", "Social Impact"],
-      eligibleYears: "All undergraduate years",
-      organizer: "STEM Ghana Foundation",
-      matchScore: 0.88,
+        "Social entrepreneurship competition. Winner advances to regionals.",
+      date: "2026-04-30",
+      category: "competition",
+      targetFields: ["Business", "Social Impact"],
+      eligibleYears: ["any"],
+      format: "in-person",
+      institution: "all",
+      organizerName: "Hult Prize Foundation",
     },
     {
-      id: "e4",
-      filter: "competition",
-      category: "COMPETITION",
-      title: "Campus Innovation Challenge",
-      date: "Apr 12–26",
-      format: "In-person",
-      institution: "Ashesi University",
+      id: "8",
+      title: "Data Science for Social Good",
       description:
-        "Pitch your idea to judges and win seed funding. Teams of 2–5; design and business tracks available.",
-      paragraphs: [
-        "Pitch your idea to judges and win seed funding. Teams of 2–5; design and business tracks available.",
-        "Workshops on lean canvas and pitching are included in week one before elimination rounds.",
-      ],
-      tags: ["Business", "Tech"],
-      eligibleYears: "Teams of 2–5 (any year)",
-      organizer: "Ashesi Entrepreneurship Centre",
-      matchScore: 0.7,
-    },
-    {
-      id: "e5",
-      filter: "seminar",
-      category: "SEMINAR",
-      title: "Public Speaking for Leaders",
-      date: "Wed, Apr 9",
-      format: "Online",
-      institution: "UCC",
-      description:
-        "Short seminar on structuring talks and handling Q&A—useful for class presentations and club leadership.",
-      paragraphs: [
-        "Short seminar on structuring talks and handling Q&A—useful for class presentations and club leadership.",
-        "Bring a two-minute draft talk for live coaching in breakout rooms.",
-      ],
-      tags: ["Arts", "Social Impact"],
-      eligibleYears: "All years",
-      organizer: "UCC Communications Guild",
-      matchScore: 0.62,
-    },
-    {
-      id: "e6",
-      filter: "networking",
-      category: "NETWORKING",
-      title: "Alumni Mixer — Engineering",
-      date: "Fri, Apr 11",
-      format: "In-person",
-      institution: "UG",
-      description:
-        "Meet graduates working in industry. Casual format with short intros and open networking time.",
-      paragraphs: [
-        "Meet graduates working in industry. Casual format with short intros and open networking time.",
-        "Dress code: smart casual. RSVP required for catering numbers.",
-      ],
-      tags: ["Engineering", "Networking"],
-      eligibleYears: "3rd Year and above",
-      organizer: "UG Engineering Alumni Chapter",
-      matchScore: 0.84,
+        "Seminar on using data to solve social challenges in Africa.",
+      date: "2026-05-10",
+      category: "seminar",
+      targetFields: ["Tech", "Social Impact"],
+      eligibleYears: ["any"],
+      format: "hybrid",
+      institution: "all",
+      organizerName: "DataKind Africa",
     },
   ];
 
-  function getPostedEvents() {
+  var currentFilter = "all";
+  var userProfile = null;
+
+  function escapeHtml(str) {
+    return String(str == null ? "" : str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function readSession() {
     try {
-      var raw = localStorage.getItem("campusconnect_posted_events");
-      return raw ? JSON.parse(raw) : [];
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function setPostedEvents(arr) {
-    try {
-      localStorage.setItem("campusconnect_posted_events", JSON.stringify(arr));
-    } catch (e) {
-      /* ignore */
-    }
-  }
-
-  function getAllEvents() {
-    return mockEvents.concat(getPostedEvents());
-  }
-
-  function getEventById(id) {
-    if (!id) return null;
-    var all = getAllEvents();
-    for (var i = 0; i < all.length; i++) {
-      if (all[i].id === id) return all[i];
-    }
-    return null;
-  }
-
-  function readProfile() {
-    try {
-      var raw = localStorage.getItem("campusconnect_onboarding");
+      var raw = localStorage.getItem(USER_KEY);
       return raw ? JSON.parse(raw) : null;
     } catch (e) {
       return null;
     }
   }
 
+  function readProfileRaw() {
+    try {
+      var raw = localStorage.getItem(ONBOARDING_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function requireAuthOrRedirect() {
+    if (!readSession()) {
+      window.location.href = "login.html";
+      return false;
+    }
+    return true;
+  }
+
+  function loadUserProfile() {
+    if (M && typeof M.buildUserProfile === "function") {
+      return M.buildUserProfile(readProfileRaw());
+    }
+    var raw = readProfileRaw();
+    if (!raw) return null;
+    return {
+      institution: raw.institution || "",
+      course: raw.course || "",
+      year: raw.year != null ? String(raw.year) : raw.studyYear != null ? String(raw.studyYear) : "",
+      interests: Array.isArray(raw.interests) ? raw.interests : [],
+      goals: Array.isArray(raw.goals) ? raw.goals : [],
+      preferredFormats: Array.isArray(raw.preferredFormats)
+        ? raw.preferredFormats
+        : Array.isArray(raw.formats)
+          ? raw.formats
+          : [],
+    };
+  }
+
+  function initialsFromName(name) {
+    var n = (name || "").trim();
+    if (!n) return "CC";
+    var parts = n.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    if (parts[0].length >= 2) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[0][0]).toUpperCase();
+  }
+
+  function updateWelcomeSection() {
+    var nameEl = document.getElementById("userName");
+    var instEl = document.getElementById("userInstitution");
+    var avatarEl = document.getElementById("userAvatar");
+    if (!nameEl || !instEl || !avatarEl) return;
+
+    var session = readSession();
+    var raw = readProfileRaw();
+    var displayName = (session && session.name && session.name.split(/\s+/)[0]) || "Kwame";
+    nameEl.textContent = "Welcome back, " + displayName + "!";
+
+    if (raw && raw.institution && raw.course) {
+      instEl.textContent = raw.institution + " • " + raw.course;
+    } else {
+      instEl.textContent = "Complete your profile to personalize your feed";
+    }
+
+    var fullName = session && session.name ? session.name.trim() : "";
+    avatarEl.textContent = initialsFromName(fullName || displayName);
+  }
+
   function getSavedIds() {
     try {
-      var raw = localStorage.getItem("campusconnect_saved_events");
+      var raw = localStorage.getItem(SAVED_KEY);
       return raw ? JSON.parse(raw) : [];
     } catch (e) {
       return [];
@@ -170,199 +215,227 @@
 
   function setSavedIds(ids) {
     try {
-      localStorage.setItem("campusconnect_saved_events", JSON.stringify(ids));
+      localStorage.setItem(SAVED_KEY, JSON.stringify(ids));
     } catch (e) {
       /* ignore */
     }
   }
 
   function isEventSaved(id) {
-    return getSavedIds().indexOf(id) !== -1;
+    var s = String(id);
+    return getSavedIds().some(function (x) {
+      return String(x) === s;
+    });
   }
 
-  function toggleSaved(id) {
-    var ids = getSavedIds().slice();
-    var idx = ids.indexOf(id);
-    if (idx === -1) ids.push(id);
-    else ids.splice(idx, 1);
-    setSavedIds(ids);
-    return idx === -1;
-  }
-
-  function applyProfileToHeader(profile) {
-    var nameEl = document.getElementById("userName");
-    var instEl = document.getElementById("userInstitution");
-    var avatarEl = document.getElementById("userAvatar");
-    if (!nameEl || !instEl || !avatarEl) return;
-
-    if (profile && profile.institution && profile.course) {
-      instEl.textContent = profile.institution + " • " + profile.course;
+  function toggleSavedId(id) {
+    var s = String(id);
+    var ids = getSavedIds().map(String);
+    var i = ids.indexOf(s);
+    if (i === -1) {
+      ids.push(s);
+      setSavedIds(ids);
+      return true;
     }
+    ids.splice(i, 1);
+    setSavedIds(ids);
+    return false;
+  }
 
-    var fullName = profile && profile.name ? profile.name.trim() : "";
-    var displayName = fullName ? fullName.split(/\s+/)[0] : "Kwame";
-    nameEl.textContent = "Welcome back, " + displayName + "!";
+  function handleSaveEvent(eventId, buttonEl) {
+    var nowSaved = toggleSavedId(eventId);
+    if (document.getElementById("savedGrid")) {
+      displaySavedEvents(userProfile, currentFilter);
+      return;
+    }
+    if (buttonEl && buttonEl.getAttribute("data-action") === "save") {
+      buttonEl.textContent = nowSaved ? "★ Saved" : "☆ Save";
+    }
+  }
 
-    var initials = "KW";
-    if (fullName) {
-      var parts = fullName.split(/\s+/).filter(Boolean);
-      if (parts.length >= 2) {
-        initials = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-      } else if (parts[0].length >= 2) {
-        initials = parts[0].slice(0, 2).toUpperCase();
-      } else {
-        initials = (parts[0][0] + parts[0][0]).toUpperCase();
+  function formatEventDate(isoOrStr) {
+    if (!isoOrStr) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(isoOrStr))) {
+      var d = new Date(isoOrStr + "T12:00:00");
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString("en-GB", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        });
       }
     }
-    avatarEl.textContent = initials;
+    return String(isoOrStr);
   }
 
-  function tierClass(tier) {
-    if (tier === "perfect") return "event-card__match--perfect";
-    if (tier === "great") return "event-card__match--great";
-    return "event-card__match--good";
+  function formatFormatLabel(f) {
+    var x = String(f || "").toLowerCase();
+    if (x === "in-person" || x === "in person") return "In-person";
+    if (x === "online") return "Online";
+    if (x === "hybrid") return "Hybrid";
+    return f;
   }
 
-  function matchScoreAndLabel(event, profile) {
-    var score =
-      M && typeof M.scoreEventForUser === "function"
-        ? M.scoreEventForUser(event, profile)
-        : typeof event.matchScore === "number"
-          ? event.matchScore
-          : 0.75;
-    var label;
-    if (M && typeof M.getMatchLabelWithTier === "function") {
-      label = M.getMatchLabelWithTier(score);
-    } else if (M && typeof M.getMatchLabel === "function") {
-      var t = M.getMatchLabel(score);
-      label =
-        typeof t === "string"
-          ? t
-            ? t === "Perfect Match"
-              ? { text: t, tier: "perfect" }
-              : t === "Great Match"
-                ? { text: t, tier: "great" }
-                : { text: t, tier: "good" }
-            : { text: "Good Match", tier: "good" }
-          : t;
-    } else {
-      label = { text: "Good Match", tier: "good" };
-    }
-    return { score: score, label: label };
+  function formatInstitutionLabel(inst) {
+    var s = String(inst || "").toLowerCase();
+    if (s === "all" || (s.includes("open") && s.includes("all"))) return "Open to all";
+    return inst || "—";
   }
 
-  function createCard(event, profile, options) {
-    options = options || {};
-    var cardMode = options.cardMode || "default";
-    var ml = matchScoreAndLabel(event, profile);
-    var label = ml.label;
-    var article = document.createElement("article");
-    article.className = "event-card";
-    article.dataset.eventId = event.id;
+  function tierClassFromLabel(label) {
+    if (label === "Perfect Match") return "perfect";
+    if (label === "Great Match") return "great";
+    return "good";
+  }
 
-    var match = document.createElement("span");
-    match.className = "event-card__match " + tierClass(label.tier);
-    match.textContent = label.text;
+  function truncateText(text, max) {
+    var t = String(text || "");
+    if (t.length <= max) return t;
+    return t.slice(0, max).trim() + "…";
+  }
 
-    var cat = document.createElement("span");
-    cat.className = "event-card__category";
-    cat.textContent = event.category;
+  function getTargetFieldsList(ev) {
+    return ev.targetFields || ev.tags || [];
+  }
 
-    var body = document.createElement("div");
-    body.className = "event-card__body";
-
-    var title = document.createElement("h3");
-    title.className = "event-card__title";
-    title.textContent = event.title;
-
-    var meta = document.createElement("div");
-    meta.className = "event-card__meta";
-    var d1 = document.createElement("span");
-    d1.textContent = "📅 " + event.date;
-    var d2 = document.createElement("span");
-    d2.textContent = "📍 " + event.format;
-    meta.appendChild(d1);
-    meta.appendChild(d2);
-
-    var desc = document.createElement("p");
-    desc.className = "event-card__desc";
-    desc.textContent = event.description;
-
-    var tagsWrap = document.createElement("div");
-    tagsWrap.className = "event-card__tags";
-    event.tags.forEach(function (t) {
-      var span = document.createElement("span");
-      span.className = "event-card__tag";
-      span.textContent = t;
-      tagsWrap.appendChild(span);
-    });
-
-    var actions = document.createElement("div");
-    actions.className = "event-card__actions";
-    var detail = document.createElement("a");
-    detail.className = "btn btn-primary btn-small";
-    detail.href = "event.html?id=" + encodeURIComponent(event.id);
-    detail.textContent = "View Details";
-    actions.appendChild(detail);
-
-    if (cardMode === "saved") {
-      var removeBtn = document.createElement("button");
-      removeBtn.type = "button";
-      removeBtn.className = "btn btn-secondary btn-small remove-btn";
-      removeBtn.dataset.eventId = event.id;
-      removeBtn.textContent = "Remove";
-      removeBtn.addEventListener("click", function () {
-        toggleSaved(event.id);
-        renderSaved();
-      });
-      actions.appendChild(removeBtn);
-    } else {
-      var save = document.createElement("button");
-      save.type = "button";
-      save.className = "btn btn-secondary btn-small";
-      save.dataset.action = "save";
-      save.dataset.eventId = event.id;
-      save.textContent = isEventSaved(event.id) ? "★ Saved" : "☆ Save";
-      save.addEventListener("click", function () {
-        var nowSaved = toggleSaved(event.id);
-        save.textContent = nowSaved ? "★ Saved" : "☆ Save";
-      });
-      actions.appendChild(save);
+  function createEventCard(event, matchScore, matchLabel, useRemoveButton) {
+    var badgeHtml = "";
+    if (matchLabel) {
+      var tier = tierClassFromLabel(matchLabel);
+      badgeHtml =
+        '<span class="event-card__match event-card__match--' +
+        tier +
+        '">' +
+        escapeHtml(matchLabel) +
+        "</span>";
     }
 
-    body.appendChild(title);
-    body.appendChild(meta);
-    body.appendChild(desc);
-    body.appendChild(tagsWrap);
-    body.appendChild(actions);
+    var cat = String(event.category || "").toUpperCase();
+    var fields = getTargetFieldsList(event);
+    var tagsHtml = fields
+      .map(function (t) {
+        return '<span class="event-card__tag">' + escapeHtml(t) + "</span>";
+      })
+      .join("");
 
-    article.appendChild(match);
-    article.appendChild(cat);
-    article.appendChild(body);
+    var actionHtml = useRemoveButton
+      ? '<button type="button" class="btn btn-secondary btn-small remove-btn" data-event-id="' +
+        escapeHtml(event.id) +
+        '">Remove</button>'
+      : '<button type="button" class="btn btn-secondary btn-small" data-action="save" data-event-id="' +
+        escapeHtml(event.id) +
+        '">' +
+        (isEventSaved(event.id) ? "★ Saved" : "☆ Save") +
+        "</button>";
 
-    return article;
+    return (
+      '<article class="event-card" data-event-id="' +
+      escapeHtml(event.id) +
+      '">' +
+      badgeHtml +
+      '<span class="event-card__category">' +
+      escapeHtml(cat) +
+      "</span>" +
+      '<div class="event-card__body">' +
+      '<h3 class="event-card__title">' +
+      escapeHtml(event.title) +
+      "</h3>" +
+      '<div class="event-card__meta">' +
+      "<span>📅 " +
+      escapeHtml(formatEventDate(event.date)) +
+      "</span>" +
+      "<span>📍 " +
+      escapeHtml(formatFormatLabel(event.format)) +
+      "</span>" +
+      "</div>" +
+      '<p class="event-card__desc">' +
+      escapeHtml(truncateText(event.description, 100)) +
+      "</p>" +
+      '<div class="event-card__tags">' +
+      tagsHtml +
+      "</div>" +
+      '<div class="event-card__actions">' +
+      '<a class="btn btn-primary btn-small" href="event.html?id=' +
+      encodeURIComponent(event.id) +
+      '">View Details</a>' +
+      actionHtml +
+      "</div>" +
+      "</div>" +
+      "</article>"
+    );
   }
 
-  var currentFilter = "all";
-
-  function filterEvents(events) {
-    if (currentFilter === "all") return events.slice();
-    return events.filter(function (e) {
-      return e.filter === currentFilter;
-    });
+  function getPostedEventsNormalized() {
+    try {
+      var raw = localStorage.getItem(POSTED_KEY);
+      if (!raw) return [];
+      var arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return [];
+      return arr.map(adaptPostedToSampleShape);
+    } catch (e) {
+      return [];
+    }
   }
 
-  function render() {
+  function adaptPostedToSampleShape(ev) {
+    var cat = (ev.filter || String(ev.category || "").toLowerCase()).toLowerCase();
+    var years = ev.eligibleYears;
+    if (typeof years === "string") {
+      years = years.split(",").map(function (s) {
+        return s.trim();
+      });
+    } else if (!Array.isArray(years)) {
+      years = [];
+    }
+    var fmt = String(ev.format || "")
+      .toLowerCase()
+      .replace(/\s+/g, "-");
+    if (fmt === "in-person") fmt = "in-person";
+    var inst = ev.institution || "";
+    var instLower = String(inst).toLowerCase();
+    if (instLower.indexOf("open") !== -1 && instLower.indexOf("all") !== -1) inst = "all";
+    return {
+      id: ev.id,
+      title: ev.title,
+      description: ev.description || "",
+      date: ev.date,
+      category: cat,
+      targetFields: ev.tags || ev.targetFields || [],
+      eligibleYears: years,
+      format: fmt || "online",
+      institution: instLower === "open to all" || instLower === "open" ? "all" : inst,
+      organizerName: ev.organizerName || ev.organizer || "",
+    };
+  }
+
+  function getAllEvents() {
+    return sampleEvents.concat(getPostedEventsNormalized());
+  }
+
+  function findEventById(id) {
+    if (id == null || id === "") return null;
+    var s = String(id);
+    var all = getAllEvents();
+    for (var i = 0; i < all.length; i++) {
+      if (String(all[i].id) === s) return all[i];
+    }
+    return null;
+  }
+
+  function displayEvents(events, profile, filter) {
+    var filterVal = filter == null ? "all" : filter;
     var grid = document.getElementById("eventsGrid");
     var empty = document.getElementById("emptyState");
     var content = document.getElementById("content");
     if (!grid || !empty || !content) return;
 
-    grid.innerHTML = "";
-    var profile = readProfile();
-    var list = filterEvents(getAllEvents());
+    var list =
+      M && typeof M.getPersonalizedEvents === "function"
+        ? M.getPersonalizedEvents(events, profile, filterVal)
+        : events.slice();
 
-    if (list.length === 0) {
+    if (!list.length) {
       empty.hidden = false;
       content.hidden = true;
       return;
@@ -370,27 +443,18 @@
 
     empty.hidden = true;
     content.hidden = false;
+    grid.innerHTML = "";
+
     list.forEach(function (ev) {
-      grid.appendChild(createCard(ev, profile));
+      var score = ev.matchScore != null ? ev.matchScore : M ? M.calculateMatchScore(profile, ev) : 0;
+      var labelStr = M && typeof M.getMatchLabel === "function" ? M.getMatchLabel(score) : "";
+      var html = createEventCard(ev, score, labelStr || null, false);
+      grid.insertAdjacentHTML("beforeend", html);
     });
   }
 
-  function getSavedEventsList() {
-    var ids = getSavedIds();
-    if (ids.length === 0) return [];
-    var all = getAllEvents();
-    var byId = {};
-    all.forEach(function (e) {
-      byId[e.id] = e;
-    });
-    return ids
-      .map(function (id) {
-        return byId[id];
-      })
-      .filter(Boolean);
-  }
-
-  function renderSaved() {
+  function displaySavedEvents(profile, filter) {
+    var filterVal = filter == null ? "all" : filter;
     var grid = document.getElementById("savedGrid");
     var empty = document.getElementById("emptyState");
     var content = document.getElementById("content");
@@ -400,12 +464,18 @@
     var hintEl = document.getElementById("emptyStateHint");
     var browseBtn = document.getElementById("emptyStateBrowse");
 
-    grid.innerHTML = "";
-    var profile = readProfile();
-    var savedList = getSavedEventsList();
-    var filtered = filterEvents(savedList);
+    var savedIds = getSavedIds().map(String);
+    var all = getAllEvents();
+    var savedEvents = all.filter(function (e) {
+      return savedIds.indexOf(String(e.id)) !== -1;
+    });
 
-    if (savedList.length === 0) {
+    var list =
+      M && typeof M.getPersonalizedEvents === "function"
+        ? M.getPersonalizedEvents(savedEvents, profile, filterVal)
+        : savedEvents.slice();
+
+    if (savedEvents.length === 0) {
       empty.hidden = false;
       content.hidden = true;
       if (titleEl) titleEl.textContent = "No saved events yet";
@@ -415,7 +485,7 @@
       return;
     }
 
-    if (filtered.length === 0) {
+    if (!list.length) {
       empty.hidden = false;
       content.hidden = true;
       if (titleEl) titleEl.textContent = "No events found";
@@ -426,64 +496,111 @@
 
     empty.hidden = true;
     content.hidden = false;
-    filtered.forEach(function (ev) {
-      grid.appendChild(createCard(ev, profile, { cardMode: "saved" }));
+    grid.innerHTML = "";
+
+    list.forEach(function (ev) {
+      var score = ev.matchScore != null ? ev.matchScore : M ? M.calculateMatchScore(profile, ev) : 0;
+      var labelStr = M && typeof M.getMatchLabel === "function" ? M.getMatchLabel(score) : "";
+      var html = createEventCard(ev, score, labelStr || null, true);
+      grid.insertAdjacentHTML("beforeend", html);
     });
   }
 
-  function initSavedPage() {
+  function setupFilters() {
     document.querySelectorAll(".filter-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
+        document.querySelectorAll(".filter-btn").forEach(function (b) {
+          b.classList.remove("is-active");
+        });
+        btn.classList.add("is-active");
         currentFilter = btn.getAttribute("data-filter") || "all";
-        setActiveFilter(btn);
-        renderSaved();
+        if (document.getElementById("eventsGrid")) {
+          displayEvents(getAllEvents(), userProfile, currentFilter);
+        }
+        if (document.getElementById("savedGrid")) {
+          displaySavedEvents(userProfile, currentFilter);
+        }
       });
     });
+  }
+
+  function bindDashboardGridClicks() {
+    var grid = document.getElementById("eventsGrid");
+    if (!grid || grid.dataset.saveBound === "1") return;
+    grid.dataset.saveBound = "1";
+    grid.addEventListener("click", function (e) {
+      var btn = e.target.closest('[data-action="save"]');
+      if (!btn) return;
+      handleSaveEvent(btn.getAttribute("data-event-id"), btn);
+    });
+  }
+
+  function bindSavedGridClicks() {
+    var grid = document.getElementById("savedGrid");
+    if (!grid || grid.dataset.removeBound === "1") return;
+    grid.dataset.removeBound = "1";
+    grid.addEventListener("click", function (e) {
+      var btn = e.target.closest(".remove-btn");
+      if (!btn) return;
+      handleSaveEvent(btn.getAttribute("data-event-id"), btn);
+    });
+  }
+
+  function initDashboard() {
+    if (!requireAuthOrRedirect()) return;
+    userProfile = loadUserProfile();
+    updateWelcomeSection();
+    setupFilters();
+    bindDashboardGridClicks();
 
     window.setTimeout(function () {
       var loading = document.getElementById("loading");
       if (loading) loading.hidden = true;
-      renderSaved();
-    }, 450);
+      displayEvents(getAllEvents(), userProfile, "all");
+    }, 350);
   }
 
-  function setActiveFilter(btn) {
-    document.querySelectorAll(".filter-btn").forEach(function (b) {
-      b.classList.toggle("is-active", b === btn);
-    });
+  function initSavedPage() {
+    if (!requireAuthOrRedirect()) return;
+    userProfile = loadUserProfile();
+    setupFilters();
+    bindSavedGridClicks();
+
+    window.setTimeout(function () {
+      var loading = document.getElementById("loading");
+      if (loading) loading.hidden = true;
+      displaySavedEvents(userProfile, "all");
+    }, 350);
   }
 
-  function syncSaveButton(btn, id) {
-    if (!btn) return;
-    btn.textContent = isEventSaved(id) ? "★ Saved" : "☆ Save Event";
+  function eligibleYearsDisplay(ev) {
+    var y = ev.eligibleYears;
+    if (Array.isArray(y)) return y.join(", ");
+    return y || "—";
   }
 
-  function fillDescription(el, paragraphs) {
+  function fillDescription(el, text) {
     if (!el) return;
     el.innerHTML = "";
-    var list = paragraphs && paragraphs.length ? paragraphs : [];
-    if (list.length === 0) {
-      var p = document.createElement("p");
-      p.textContent = "";
-      el.appendChild(p);
-      return;
-    }
-    list.forEach(function (text) {
-      var p = document.createElement("p");
-      p.textContent = text;
-      el.appendChild(p);
-    });
+    var p = document.createElement("p");
+    p.textContent = text || "";
+    el.appendChild(p);
   }
 
-  function fillTags(el, tags) {
+  function fillFieldTags(el, ev) {
     if (!el) return;
     el.innerHTML = "";
-    (tags || []).forEach(function (t) {
+    getTargetFieldsList(ev).forEach(function (t) {
       var span = document.createElement("span");
       span.className = "event-card__tag";
       span.textContent = t;
       el.appendChild(span);
     });
+  }
+
+  function syncDetailSaveBtn(btn, id) {
+    if (!btn) return;
+    btn.textContent = isEventSaved(id) ? "★ Saved" : "☆ Save Event";
   }
 
   function initEventDetail() {
@@ -500,7 +617,7 @@
     window.setTimeout(function () {
       if (loading) loading.hidden = true;
 
-      var ev = getEventById(id);
+      var ev = findEventById(id);
       if (!ev) {
         if (notFound) notFound.hidden = false;
         document.title = "Event not found — CampusConnect";
@@ -519,38 +636,34 @@
       var saveBtn = document.getElementById("saveBtn");
       var shareBtn = document.getElementById("shareBtn");
 
-      if (catEl) catEl.textContent = ev.category;
+      if (catEl) catEl.textContent = String(ev.category || "").toUpperCase();
       if (titleEl) titleEl.textContent = ev.title;
 
       if (metaEl) {
         metaEl.innerHTML = "";
         var s1 = document.createElement("span");
-        s1.textContent = "📅 " + ev.date;
+        s1.textContent = "📅 " + formatEventDate(ev.date);
         var s2 = document.createElement("span");
-        s2.textContent = "📍 " + ev.format;
+        s2.textContent = "📍 " + formatFormatLabel(ev.format);
         var s3 = document.createElement("span");
-        s3.textContent = "🏫 " + ev.institution;
+        s3.textContent = "🏫 " + formatInstitutionLabel(ev.institution);
         metaEl.appendChild(s1);
         metaEl.appendChild(s2);
         metaEl.appendChild(s3);
       }
 
-      var paras = ev.paragraphs;
-      if (!paras || !paras.length) {
-        paras = ev.description ? [ev.description] : [];
-      }
-      fillDescription(descEl, paras);
-      fillTags(fieldsEl, ev.tags);
-      if (yearsEl) yearsEl.textContent = ev.eligibleYears || "—";
-      if (orgEl) orgEl.textContent = ev.organizer || "—";
+      fillDescription(descEl, ev.description);
+      fillFieldTags(fieldsEl, ev);
+      if (yearsEl) yearsEl.textContent = eligibleYearsDisplay(ev);
+      if (orgEl) orgEl.textContent = ev.organizerName || ev.organizer || "—";
 
       container.hidden = false;
 
-      syncSaveButton(saveBtn, ev.id);
+      syncDetailSaveBtn(saveBtn, ev.id);
       if (saveBtn) {
         saveBtn.onclick = function () {
-          toggleSaved(ev.id);
-          syncSaveButton(saveBtn, ev.id);
+          toggleSavedId(ev.id);
+          syncDetailSaveBtn(saveBtn, ev.id);
         };
       }
 
@@ -573,24 +686,6 @@
     }, 400);
   }
 
-  function initDashboard() {
-    applyProfileToHeader(readProfile());
-
-    document.querySelectorAll(".filter-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        currentFilter = btn.getAttribute("data-filter") || "all";
-        setActiveFilter(btn);
-        render();
-      });
-    });
-
-    window.setTimeout(function () {
-      var loading = document.getElementById("loading");
-      if (loading) loading.hidden = true;
-      render();
-    }, 450);
-  }
-
   var TARGET_FIELD_LABEL = {
     tech: "Tech",
     business: "Business",
@@ -611,6 +706,23 @@
     final: "Final Year",
     postgrad: "Postgrad",
   };
+
+  function getPostedEventsRaw() {
+    try {
+      var raw = localStorage.getItem(POSTED_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function setPostedEvents(arr) {
+    try {
+      localStorage.setItem(POSTED_KEY, JSON.stringify(arr));
+    } catch (e) {
+      /* ignore */
+    }
+  }
 
   function formatDateDisplay(iso) {
     if (!iso) return "";
@@ -714,7 +826,7 @@
         matchScore: 0.82,
       };
 
-      var posted = getPostedEvents();
+      var posted = getPostedEventsRaw();
       posted.push(newEvent);
       setPostedEvents(posted);
 
@@ -737,13 +849,19 @@
       initSavedPage();
     } else if (document.getElementById("submitForm")) {
       initSubmitForm();
-    } else {
+    } else if (document.getElementById("eventsGrid")) {
       initDashboard();
     }
   });
 
   window.CampusConnectEvents = {
-    getEventById: getEventById,
-    mockEvents: mockEvents,
+    sampleEvents: sampleEvents,
+    getAllEvents: getAllEvents,
+    findEventById: findEventById,
+    displayEvents: displayEvents,
+    displaySavedEvents: displaySavedEvents,
+    setupFilters: setupFilters,
+    handleSaveEvent: handleSaveEvent,
+    createEventCard: createEventCard,
   };
 })();

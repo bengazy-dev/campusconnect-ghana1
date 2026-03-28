@@ -14,7 +14,7 @@
   function tagToInterestSlug(tag) {
     var t = String(tag).trim().toLowerCase();
     if (t === "social impact") return "social-impact";
-    if (t === "all fields") return "all";
+    if (t === "all fields" || t === "all") return "all";
     return t.replace(/\s+/g, "-");
   }
 
@@ -105,7 +105,9 @@
       }
     });
 
-    var yearsStr = event.eligibleYears || "";
+    var yearsStr = Array.isArray(event.eligibleYears)
+      ? event.eligibleYears.join(", ")
+      : event.eligibleYears || "";
     var userYear = userProfile.year != null ? String(userProfile.year) : "";
     if (eligibleYearMatches(yearsStr, userYear)) {
       score += 2;
