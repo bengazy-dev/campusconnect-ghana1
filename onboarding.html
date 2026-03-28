@@ -251,40 +251,5 @@
     </main>
 
     <script src="js/onboarding.js"></script>
-    <script>
-      (function () {
-        function syncRadioGroup(name) {
-          var radios = document.querySelectorAll('input[type="radio"][name="' + name + '"]');
-          radios.forEach(function (r) {
-            var item = r.closest(".radio-item");
-            if (item) item.classList.toggle("selected", r.checked);
-          });
-        }
-
-        function syncCheckbox(item) {
-          var input = item.querySelector('input[type="checkbox"]');
-          if (input) item.classList.toggle("selected", input.checked);
-        }
-
-        document.addEventListener("change", function (e) {
-          var t = e.target;
-          if (t.matches && t.matches('.checkbox-item input[type="checkbox"]')) {
-            syncCheckbox(t.closest(".checkbox-item"));
-          }
-          if (t.matches && t.matches('.radio-item input[type="radio"]')) {
-            syncRadioGroup(t.name);
-          }
-        });
-
-        document.addEventListener("DOMContentLoaded", function () {
-          document.querySelectorAll(".checkbox-item").forEach(syncCheckbox);
-          document.querySelectorAll('input[type="radio"][name="studyYear"]:checked').forEach(
-            function () {
-              syncRadioGroup("studyYear");
-            }
-          );
-        });
-      })();
-    </script>
   </body>
 </html>

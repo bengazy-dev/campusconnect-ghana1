@@ -1,176 +1,303 @@
 // Onboarding flow: steps, validation, and persisting initial user preferences.
 
 (function () {
-  var TOTAL_STEPS = 6;
-  var currentStep = 1;
+  var USER_KEY = "campusconnect_user";
+  var ONBOARDING_KEY = "campusconnect_onboarding";
 
-  function $(id) {
-    return document.getElementById(id);
+  let currentStep = 1;
+  const totalSteps = 6;
+
+  let profileData = {
+    institution: "",
+    course: "",
+    year: "",
+    interests: [],
+    goals: [],
+    preferredFormats: [],
+  };
+
+  var step1;
+  var step2;
+  var step3;
+  var step4;
+  var step5;
+  var step6;
+  var prevBtn;
+  var nextBtn;
+  var progressBar;
+  var progressDots;
+  var institutionEl;
+  var courseEl;
+
+  function readSession() {
+    try {
+      var raw = localStorage.getItem(USER_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
   }
 
-  function getStepEl(n) {
-    return $("step" + n);
+  function syncRadioItemClasses() {
+    document.querySelectorAll(".radio-item").forEach(function (item) {
+      var input = item.querySelector('input[type="radio"]');
+      if (input) item.classList.toggle("selected", input.checked);
+    });
+  }
+
+  function syncCheckboxItemClasses() {
+    document.querySelectorAll(".checkbox-item").forEach(function (item) {
+      var input = item.querySelector('input[type="checkbox"]');
+      if (input) item.classList.toggle("selected", input.checked);
+    });
   }
 
   function getStepErrorEl(n) {
-    return $("step" + n + "Error");
+    return document.getElementById("step" + n + "Error");
   }
 
-  function clearError(n) {
+  function clearStepError(n) {
     var el = getStepErrorEl(n);
     if (el) el.textContent = "";
   }
 
-  function setError(n, message) {
+  function showStepError(n, message) {
     var el = getStepErrorEl(n);
     if (el) el.textContent = message || "";
   }
 
+  function updateProgressBar() {
+    if (!progressDots || !progressDots.length) return;
+    progressDots.forEach(function (dot, index) {
+      var stepIndex = index + 1;
+      dot.classList.remove("active", "completed");
+      if (stepIndex < currentStep) dot.classList.add("completed");
+      else if (stepIndex === currentStep) dot.classList.add("active");
+    });
+    if (progressBar) progressBar.setAttribute("aria-valuenow", String(currentStep));
+  }
+
+  function showStep(n) {
+    if (n < 1 || n > totalSteps) return;
+    currentStep = n;
+
+    [step1, step2, step3, step4, step5, step6].forEach(function (el, i) {
+      if (!el) return;
+      el.hidden = i + 1 !== n;
+    });
+
+    updateProgressBar();
+
+    if (prevBtn) prevBtn.hidden = currentStep === 1;
+    if (nextBtn) {
+      nextBtn.textContent = currentStep === totalSteps ? "Complete Setup" : "Next →";
+    }
+  }
+
   function validateStep(n) {
-    clearError(n);
+    clearStepError(n);
     switch (n) {
-      case 1: {
-        var inst = $("institution");
-        if (!inst || !inst.value) {
-          setError(1, "Please select your institution.");
+      case 1:
+        if (!institutionEl || !institutionEl.value) {
+          showStepError(1, "Please select your institution.");
           return false;
         }
         return true;
-      }
-      case 2: {
-        var course = $("course");
-        if (!course || !course.value.trim()) {
-          setError(2, "Please enter your course or program.");
+      case 2:
+        if (!courseEl || !courseEl.value.trim()) {
+          showStepError(2, "Please enter your course or program.");
           return false;
         }
         return true;
-      }
       case 3: {
-        var picked = document.querySelector('input[name="studyYear"]:checked');
+        var picked = document.querySelector('#step3 input[name="studyYear"]:checked');
         if (!picked) {
-          setError(3, "Please select your year.");
+          showStepError(3, "Please select your year.");
           return false;
         }
         return true;
       }
-      case 4: {
-        var any = document.querySelector(
-          '#step4 input[name="interests"]:checked'
-        );
-        if (!any) {
-          setError(4, "Select at least one interest.");
+      case 4:
+        if (!document.querySelector('#step4 input[name="interests"]:checked')) {
+          showStepError(4, "Select at least one interest.");
           return false;
         }
         return true;
-      }
-      case 5: {
-        var g = document.querySelector('#step5 input[name="goals"]:checked');
-        if (!g) {
-          setError(5, "Select at least one goal.");
+      case 5:
+        if (!document.querySelector('#step5 input[name="goals"]:checked')) {
+          showStepError(5, "Select at least one goal.");
           return false;
         }
         return true;
-      }
-      case 6: {
-        var f = document.querySelector('#step6 input[name="formats"]:checked');
-        if (!f) {
-          setError(6, "Select at least one event format.");
+      case 6:
+        if (!document.querySelector('#step6 input[name="formats"]:checked')) {
+          showStepError(6, "Select at least one event format.");
           return false;
         }
         return true;
-      }
       default:
         return true;
     }
   }
 
-  function updateProgressDots() {
-    var dots = document.querySelectorAll(".progress-step[data-step]");
-    var bar = $("progressBar");
-    dots.forEach(function (dot) {
-      var stepNum = parseInt(dot.getAttribute("data-step"), 10);
-      dot.classList.remove("active", "completed");
-      if (stepNum < currentStep) dot.classList.add("completed");
-      else if (stepNum === currentStep) dot.classList.add("active");
+  function checkedDataValuesInStep(stepEl, inputName) {
+    if (!stepEl) return [];
+    var out = [];
+    stepEl.querySelectorAll('input[name="' + inputName + '"]:checked').forEach(function (inp) {
+      var item = inp.closest(".checkbox-item");
+      var dv = item && item.getAttribute("data-value");
+      out.push(dv || inp.value);
     });
-    if (bar) bar.setAttribute("aria-valuenow", String(currentStep));
+    return out;
   }
 
-  function updateStepVisibility() {
-    for (var i = 1; i <= TOTAL_STEPS; i++) {
-      var section = getStepEl(i);
-      if (!section) continue;
-      section.hidden = i !== currentStep;
-    }
-
-    var prevBtn = $("prevBtn");
-    var nextBtn = $("nextBtn");
-    if (prevBtn) prevBtn.hidden = currentStep === 1;
-    if (nextBtn) {
-      nextBtn.textContent = currentStep === TOTAL_STEPS ? "Complete Setup" : "Next →";
-    }
-    updateProgressDots();
-  }
-
-  function goNext() {
-    if (!validateStep(currentStep)) return;
-    if (currentStep < TOTAL_STEPS) {
-      currentStep += 1;
-      updateStepVisibility();
-    } else {
-      completeOnboarding();
-    }
-  }
-
-  function goPrev() {
-    if (currentStep > 1) {
-      clearError(currentStep);
-      currentStep -= 1;
-      updateStepVisibility();
-    }
-  }
-
-  function checkedValues(containerSelector, name) {
-    return Array.prototype.map.call(
-      document.querySelectorAll(containerSelector + ' input[name="' + name + '"]:checked'),
-      function (input) {
-        return input.value;
+  function saveStepData(n) {
+    switch (n) {
+      case 1:
+        profileData.institution = institutionEl ? institutionEl.value : "";
+        break;
+      case 2:
+        profileData.course = courseEl ? courseEl.value.trim() : "";
+        break;
+      case 3: {
+        var radio = document.querySelector('#step3 input[name="studyYear"]:checked');
+        var wrap = radio && radio.closest(".radio-item");
+        profileData.year =
+          (wrap && wrap.getAttribute("data-value")) || (radio && radio.value) || "";
+        break;
       }
-    );
+      case 4:
+        profileData.interests = checkedDataValuesInStep(step4, "interests");
+        break;
+      case 5:
+        profileData.goals = checkedDataValuesInStep(step5, "goals");
+        break;
+      case 6:
+        profileData.preferredFormats = checkedDataValuesInStep(step6, "formats");
+        break;
+      default:
+        break;
+    }
   }
 
-  function completeOnboarding() {
-    var studyYearInput = document.querySelector('input[name="studyYear"]:checked');
-    var snapshot = {
-      institution: ($("institution") && $("institution").value) || "",
-      course: ($("course") && $("course").value.trim()) || "",
-      studyYear: (studyYearInput && studyYearInput.value) || "",
-      interests: checkedValues("#step4", "interests"),
-      goals: checkedValues("#step5", "goals"),
-      formats: checkedValues("#step6", "formats"),
+  function submitProfile() {
+    var session = readSession();
+    var payload = {
+      institution: profileData.institution,
+      course: profileData.course,
+      year: profileData.year,
+      studyYear: profileData.year,
+      interests: profileData.interests.slice(),
+      goals: profileData.goals.slice(),
+      preferredFormats: profileData.preferredFormats.slice(),
+      formats: profileData.preferredFormats.slice(),
     };
+    if (session && session.name) payload.name = session.name;
+    if (session && session.email) payload.email = session.email;
+
+    console.log("[InsForge TODO] save onboarding profile", payload);
+
     try {
-      if (window.localStorage) {
-        localStorage.setItem("campusconnect_onboarding", JSON.stringify(snapshot));
-      }
+      localStorage.setItem(ONBOARDING_KEY, JSON.stringify(payload));
     } catch (e) {
       /* ignore */
     }
+
     window.location.href = "index.html";
   }
 
+  function onNextClick() {
+    if (!validateStep(currentStep)) return;
+    saveStepData(currentStep);
+
+    if (currentStep < totalSteps) {
+      showStep(currentStep + 1);
+    } else {
+      submitProfile();
+    }
+  }
+
+  function onPrevClick() {
+    if (currentStep > 1) {
+      clearStepError(currentStep);
+      showStep(currentStep - 1);
+    }
+  }
+
+  function bindRadioAndCheckboxUi() {
+    document.addEventListener("change", function (e) {
+      var t = e.target;
+      if (t.matches && t.matches('.radio-item input[type="radio"]')) {
+        syncRadioItemClasses();
+      }
+      if (t.matches && t.matches('.checkbox-item input[type="checkbox"]')) {
+        syncCheckboxItemClasses();
+      }
+    });
+
+    document.querySelectorAll(".radio-item").forEach(function (item) {
+      item.addEventListener("click", function () {
+        window.requestAnimationFrame(syncRadioItemClasses);
+      });
+    });
+
+    document.querySelectorAll(".checkbox-item").forEach(function (item) {
+      item.addEventListener("click", function () {
+        window.requestAnimationFrame(syncCheckboxItemClasses);
+      });
+    });
+  }
+
+  function cacheDom() {
+    step1 = document.getElementById("step1");
+    step2 = document.getElementById("step2");
+    step3 = document.getElementById("step3");
+    step4 = document.getElementById("step4");
+    step5 = document.getElementById("step5");
+    step6 = document.getElementById("step6");
+    prevBtn = document.getElementById("prevBtn");
+    nextBtn = document.getElementById("nextBtn");
+    progressBar = document.getElementById("progressBar");
+    progressDots = document.querySelectorAll("#progressBar .progress-step[data-step]");
+    institutionEl = document.getElementById("institution");
+    courseEl = document.getElementById("course");
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
-    var form = $("onboardingForm");
-    var nextBtn = $("nextBtn");
-    var prevBtn = $("prevBtn");
-    if (nextBtn) nextBtn.addEventListener("click", goNext);
-    if (prevBtn) prevBtn.addEventListener("click", goPrev);
+    if (!readSession()) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    cacheDom();
+    bindRadioAndCheckboxUi();
+    syncRadioItemClasses();
+    syncCheckboxItemClasses();
+
+    if (nextBtn) nextBtn.addEventListener("click", onNextClick);
+    if (prevBtn) prevBtn.addEventListener("click", onPrevClick);
+
+    var form = document.getElementById("onboardingForm");
     if (form) {
       form.addEventListener("submit", function (e) {
         e.preventDefault();
-        goNext();
+        onNextClick();
       });
     }
-    updateStepVisibility();
+
+    showStep(1);
   });
+
+  window.CampusConnectOnboarding = {
+    getCurrentStep: function () {
+      return currentStep;
+    },
+    getProfileData: function () {
+      return profileData;
+    },
+    showStep: showStep,
+    validateStep: validateStep,
+    saveStepData: saveStepData,
+    submitProfile: submitProfile,
+  };
 })();
