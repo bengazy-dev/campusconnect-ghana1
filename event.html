@@ -1,1 +1,76 @@
-<!-- Single event detail view (info, RSVP, related actions). -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Event — CampusConnect</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script>
+      window.__eventIdParam = new URLSearchParams(window.location.search).get("id");
+    </script>
+  </head>
+  <body class="has-navbar">
+    <header class="navbar">
+      <a class="navbar__brand" href="index.html">CampusConnect</a>
+      <nav aria-label="Main">
+        <ul class="navbar__links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="saved.html">Saved</a></li>
+          <li><a href="login.html" id="navLogout">Logout</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="event-detail-page container container--narrow">
+      <a class="back-link event-detail__back" href="index.html">← Back to events</a>
+
+      <div id="eventLoading" class="dashboard__loading" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <span>Loading event…</span>
+      </div>
+
+      <article id="eventContainer" class="event-detail" hidden>
+        <header class="event-detail__header">
+          <span id="eventCategory" class="event-card__category">WORKSHOP</span>
+          <h1 id="eventTitle" class="event-detail__title">Event title</h1>
+          <div id="eventMeta" class="event-detail__meta"></div>
+        </header>
+
+        <div class="event-detail__layout">
+          <div class="event-detail__main">
+            <h2 class="event-detail__section-title">About this opportunity</h2>
+            <div id="eventDescription" class="event-detail__description"></div>
+          </div>
+          <aside class="event-detail__aside card">
+            <h3 class="event-detail__aside-title">Details</h3>
+            <dl class="event-detail__dl">
+              <dt>Target fields</dt>
+              <dd id="eventFields" class="event-detail__tags"></dd>
+              <dt>Eligible years</dt>
+              <dd id="eventYears"></dd>
+              <dt>Organizer</dt>
+              <dd id="eventOrganizer"></dd>
+            </dl>
+          </aside>
+        </div>
+
+        <div class="event-detail__actions">
+          <button type="button" class="btn btn-primary" id="saveBtn">☆ Save Event</button>
+          <button type="button" class="btn btn-secondary" id="shareBtn" hidden>
+            Share
+          </button>
+        </div>
+      </article>
+
+      <div id="eventNotFound" class="empty-state" hidden>
+        <div class="empty-state__icon" aria-hidden="true">❓</div>
+        <h2 class="empty-state__title">Event not found</h2>
+        <p class="empty-state__hint">
+          <a href="index.html">Return to events</a>
+        </p>
+      </div>
+    </main>
+
+    <script src="js/events.js"></script>
+  </body>
+</html>

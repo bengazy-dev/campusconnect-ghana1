@@ -11,9 +11,16 @@
       title: "Full-Stack Web Sprint",
       date: "Sat, Apr 5",
       format: "In-person",
+      institution: "KNUST",
       description:
         "Build a small app end-to-end with mentors. Great for students who want hands-on coding practice and portfolio pieces.",
+      paragraphs: [
+        "Build a small app end-to-end with mentors. Great for students who want hands-on coding practice and portfolio pieces.",
+        "Sessions run in three-hour blocks with code reviews and a demo day at the end. Laptops required; food provided.",
+      ],
       tags: ["Tech", "Engineering"],
+      eligibleYears: "2nd–4th Year, Postgrad",
+      organizer: "KNUST Tech Society",
       matchScore: 0.91,
     },
     {
@@ -23,9 +30,16 @@
       title: "Summer Analyst Program",
       date: "Apply by Apr 20",
       format: "Hybrid",
+      institution: "UPSA",
       description:
         "Structured internship with rotations in product and data. Open to penultimate-year students with strong analytical skills.",
+      paragraphs: [
+        "Structured internship with rotations in product and data. Open to penultimate-year students with strong analytical skills.",
+        "You will work with a mentor, present a capstone, and may receive a return offer for top performers.",
+      ],
       tags: ["Business", "Finance"],
+      eligibleYears: "Penultimate year",
+      organizer: "Career Services Consortium",
       matchScore: 0.78,
     },
     {
@@ -35,9 +49,16 @@
       title: "STEM Excellence Award",
       date: "Deadline May 1",
       format: "Online",
+      institution: "Open (Ghana universities)",
       description:
         "Merit-based support for STEM majors. Includes mentorship and a community of past recipients.",
+      paragraphs: [
+        "Merit-based support for STEM majors. Includes mentorship and a community of past recipients.",
+        "Shortlisted applicants complete a short video interview; awards are announced before semester break.",
+      ],
       tags: ["Tech", "Social Impact"],
+      eligibleYears: "All undergraduate years",
+      organizer: "STEM Ghana Foundation",
       matchScore: 0.88,
     },
     {
@@ -47,9 +68,16 @@
       title: "Campus Innovation Challenge",
       date: "Apr 12–26",
       format: "In-person",
+      institution: "Ashesi University",
       description:
         "Pitch your idea to judges and win seed funding. Teams of 2–5; design and business tracks available.",
+      paragraphs: [
+        "Pitch your idea to judges and win seed funding. Teams of 2–5; design and business tracks available.",
+        "Workshops on lean canvas and pitching are included in week one before elimination rounds.",
+      ],
       tags: ["Business", "Tech"],
+      eligibleYears: "Teams of 2–5 (any year)",
+      organizer: "Ashesi Entrepreneurship Centre",
       matchScore: 0.7,
     },
     {
@@ -59,9 +87,16 @@
       title: "Public Speaking for Leaders",
       date: "Wed, Apr 9",
       format: "Online",
+      institution: "UCC",
       description:
         "Short seminar on structuring talks and handling Q&A—useful for class presentations and club leadership.",
+      paragraphs: [
+        "Short seminar on structuring talks and handling Q&A—useful for class presentations and club leadership.",
+        "Bring a two-minute draft talk for live coaching in breakout rooms.",
+      ],
       tags: ["Arts", "Social Impact"],
+      eligibleYears: "All years",
+      organizer: "UCC Communications Guild",
       matchScore: 0.62,
     },
     {
@@ -71,12 +106,27 @@
       title: "Alumni Mixer — Engineering",
       date: "Fri, Apr 11",
       format: "In-person",
+      institution: "UG",
       description:
         "Meet graduates working in industry. Casual format with short intros and open networking time.",
+      paragraphs: [
+        "Meet graduates working in industry. Casual format with short intros and open networking time.",
+        "Dress code: smart casual. RSVP required for catering numbers.",
+      ],
       tags: ["Engineering", "Networking"],
+      eligibleYears: "3rd Year and above",
+      organizer: "UG Engineering Alumni Chapter",
       matchScore: 0.84,
     },
   ];
+
+  function getEventById(id) {
+    if (!id) return null;
+    for (var i = 0; i < mockEvents.length; i++) {
+      if (mockEvents[i].id === id) return mockEvents[i];
+    }
+    return null;
+  }
 
   function readProfile() {
     try {
@@ -85,6 +135,36 @@
     } catch (e) {
       return null;
     }
+  }
+
+  function getSavedIds() {
+    try {
+      var raw = localStorage.getItem("campusconnect_saved_events");
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function setSavedIds(ids) {
+    try {
+      localStorage.setItem("campusconnect_saved_events", JSON.stringify(ids));
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function isEventSaved(id) {
+    return getSavedIds().indexOf(id) !== -1;
+  }
+
+  function toggleSaved(id) {
+    var ids = getSavedIds().slice();
+    var idx = ids.indexOf(id);
+    if (idx === -1) ids.push(id);
+    else ids.splice(idx, 1);
+    setSavedIds(ids);
+    return idx === -1;
   }
 
   function applyProfileToHeader(profile) {
@@ -175,7 +255,12 @@
     save.type = "button";
     save.className = "btn btn-secondary btn-small";
     save.dataset.action = "save";
-    save.textContent = "☆ Save";
+    save.dataset.eventId = event.id;
+    save.textContent = isEventSaved(event.id) ? "★ Saved" : "☆ Save";
+    save.addEventListener("click", function () {
+      var nowSaved = toggleSaved(event.id);
+      save.textContent = nowSaved ? "★ Saved" : "☆ Save";
+    });
     actions.appendChild(detail);
     actions.appendChild(save);
 
@@ -230,7 +315,127 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  function syncSaveButton(btn, id) {
+    if (!btn) return;
+    btn.textContent = isEventSaved(id) ? "★ Saved" : "☆ Save Event";
+  }
+
+  function fillDescription(el, paragraphs) {
+    if (!el) return;
+    el.innerHTML = "";
+    var list = paragraphs && paragraphs.length ? paragraphs : [];
+    if (list.length === 0) {
+      var p = document.createElement("p");
+      p.textContent = "";
+      el.appendChild(p);
+      return;
+    }
+    list.forEach(function (text) {
+      var p = document.createElement("p");
+      p.textContent = text;
+      el.appendChild(p);
+    });
+  }
+
+  function fillTags(el, tags) {
+    if (!el) return;
+    el.innerHTML = "";
+    (tags || []).forEach(function (t) {
+      var span = document.createElement("span");
+      span.className = "event-card__tag";
+      span.textContent = t;
+      el.appendChild(span);
+    });
+  }
+
+  function initEventDetail() {
+    var container = document.getElementById("eventContainer");
+    if (!container) return;
+
+    var loading = document.getElementById("eventLoading");
+    var notFound = document.getElementById("eventNotFound");
+    var id =
+      typeof window.__eventIdParam !== "undefined" && window.__eventIdParam !== null
+        ? window.__eventIdParam
+        : new URLSearchParams(window.location.search).get("id");
+
+    window.setTimeout(function () {
+      if (loading) loading.hidden = true;
+
+      var ev = getEventById(id);
+      if (!ev) {
+        if (notFound) notFound.hidden = false;
+        document.title = "Event not found — CampusConnect";
+        return;
+      }
+
+      document.title = ev.title + " — CampusConnect";
+
+      var catEl = document.getElementById("eventCategory");
+      var titleEl = document.getElementById("eventTitle");
+      var metaEl = document.getElementById("eventMeta");
+      var descEl = document.getElementById("eventDescription");
+      var fieldsEl = document.getElementById("eventFields");
+      var yearsEl = document.getElementById("eventYears");
+      var orgEl = document.getElementById("eventOrganizer");
+      var saveBtn = document.getElementById("saveBtn");
+      var shareBtn = document.getElementById("shareBtn");
+
+      if (catEl) catEl.textContent = ev.category;
+      if (titleEl) titleEl.textContent = ev.title;
+
+      if (metaEl) {
+        metaEl.innerHTML = "";
+        var s1 = document.createElement("span");
+        s1.textContent = "📅 " + ev.date;
+        var s2 = document.createElement("span");
+        s2.textContent = "📍 " + ev.format;
+        var s3 = document.createElement("span");
+        s3.textContent = "🏫 " + ev.institution;
+        metaEl.appendChild(s1);
+        metaEl.appendChild(s2);
+        metaEl.appendChild(s3);
+      }
+
+      var paras = ev.paragraphs;
+      if (!paras || !paras.length) {
+        paras = ev.description ? [ev.description] : [];
+      }
+      fillDescription(descEl, paras);
+      fillTags(fieldsEl, ev.tags);
+      if (yearsEl) yearsEl.textContent = ev.eligibleYears || "—";
+      if (orgEl) orgEl.textContent = ev.organizer || "—";
+
+      container.hidden = false;
+
+      syncSaveButton(saveBtn, ev.id);
+      if (saveBtn) {
+        saveBtn.onclick = function () {
+          toggleSaved(ev.id);
+          syncSaveButton(saveBtn, ev.id);
+        };
+      }
+
+      if (shareBtn) {
+        shareBtn.hidden = false;
+        shareBtn.onclick = function () {
+          var shareData = { title: ev.title, url: window.location.href };
+          if (navigator.share) {
+            navigator.share(shareData).catch(function () {});
+          } else if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(window.location.href).then(function () {
+              shareBtn.textContent = "Link copied";
+              window.setTimeout(function () {
+                shareBtn.textContent = "Share";
+              }, 2000);
+            });
+          }
+        };
+      }
+    }, 400);
+  }
+
+  function initDashboard() {
     applyProfileToHeader(readProfile());
 
     document.querySelectorAll(".filter-btn").forEach(function (btn) {
@@ -246,5 +451,18 @@
       if (loading) loading.hidden = true;
       render();
     }, 450);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    if (document.getElementById("eventContainer")) {
+      initEventDetail();
+    } else {
+      initDashboard();
+    }
   });
+
+  window.CampusConnectEvents = {
+    getEventById: getEventById,
+    mockEvents: mockEvents,
+  };
 })();
