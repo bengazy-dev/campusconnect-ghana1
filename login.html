@@ -74,32 +74,105 @@
           </div>
 
           <div id="loginFormContainer" role="tabpanel" aria-labelledby="loginTab">
-            <h2 class="auth-form__title">Welcome back</h2>
-            <form id="loginForm" class="auth-form" novalidate>
+            <div
+              id="resetMessage"
+              class="alert"
+              role="status"
+              aria-live="polite"
+              hidden
+            ></div>
+            <div id="loginMainStep">
+              <h2 class="auth-form__title">Welcome back</h2>
+              <form id="loginForm" class="auth-form" novalidate>
+                <div class="form-group">
+                  <label for="loginEmail">Email</label>
+                  <input
+                    type="email"
+                    id="loginEmail"
+                    name="email"
+                    autocomplete="email"
+                    placeholder="you@university.edu.gh"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="loginPassword">Password</label>
+                  <input
+                    type="password"
+                    id="loginPassword"
+                    name="password"
+                    autocomplete="current-password"
+                    required
+                  />
+                </div>
+                <div id="loginError" class="alert alert-error" role="alert" hidden></div>
+                <button type="submit" class="btn btn-primary btn--full">Login</button>
+              </form>
+              <p class="auth-form__footer">
+                <a href="#" id="forgotPasswordLink" class="auth-form__inline-link">Forgot password?</a>
+              </p>
+            </div>
+
+            <div id="forgotPasswordStep" class="auth-form" hidden>
+              <button type="button" id="backFromForgotBtn" class="back-link auth-form__back">
+                ← Back to login
+              </button>
+              <h2 class="auth-form__title">Reset your password</h2>
               <div class="form-group">
-                <label for="loginEmail">Email</label>
+                <label for="resetEmail">Email</label>
                 <input
                   type="email"
-                  id="loginEmail"
-                  name="email"
+                  id="resetEmail"
+                  name="resetEmail"
                   autocomplete="email"
                   placeholder="you@university.edu.gh"
-                  required
+                />
+              </div>
+              <button type="button" id="sendResetBtn" class="btn btn-primary btn--full">
+                Send reset code
+              </button>
+            </div>
+
+            <div id="newPasswordStep" class="auth-form" hidden>
+              <button type="button" id="backFromNewPasswordBtn" class="back-link auth-form__back">
+                ← Back
+              </button>
+              <h2 class="auth-form__title">Enter code and new password</h2>
+              <div class="form-group">
+                <label for="resetCode">6-digit code</label>
+                <input
+                  type="text"
+                  id="resetCode"
+                  name="resetCode"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  maxlength="6"
+                  placeholder="000000"
                 />
               </div>
               <div class="form-group">
-                <label for="loginPassword">Password</label>
+                <label for="newPassword">New password</label>
                 <input
                   type="password"
-                  id="loginPassword"
-                  name="password"
-                  autocomplete="current-password"
-                  required
+                  id="newPassword"
+                  name="newPassword"
+                  autocomplete="new-password"
                 />
               </div>
-              <div id="loginError" class="alert alert-error" role="alert" hidden></div>
-              <button type="submit" class="btn btn-primary btn--full">Login</button>
-            </form>
+              <div class="form-group">
+                <label for="confirmPassword">Confirm password</label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  autocomplete="new-password"
+                />
+              </div>
+              <div id="resetError" class="alert alert-error" role="alert" hidden></div>
+              <button type="button" id="resetPasswordBtn" class="btn btn-primary btn--full">
+                Reset Password
+              </button>
+            </div>
           </div>
 
           <div id="signupFormContainer" role="tabpanel" aria-labelledby="signupTab" hidden>
@@ -168,6 +241,25 @@
                 <div id="signupError" class="alert alert-error" role="alert" hidden></div>
                 <button type="submit" class="btn btn-primary btn--full">Create Account</button>
               </form>
+            </div>
+
+            <div id="verificationStep" class="auth-form" hidden>
+              <h2 class="auth-form__title">Check your email</h2>
+              <p id="verificationSubtext" class="signup-role__subtext"></p>
+              <div class="form-group">
+                <label for="verificationCode">6-digit code</label>
+                <input
+                  type="text"
+                  id="verificationCode"
+                  name="verificationCode"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  maxlength="6"
+                  placeholder="000000"
+                />
+              </div>
+              <div id="verificationError" class="alert alert-error" role="alert" hidden></div>
+              <button type="button" id="verifyBtn" class="btn btn-primary btn--full">Verify</button>
             </div>
           </div>
         </div>

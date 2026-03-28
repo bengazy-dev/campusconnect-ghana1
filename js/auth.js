@@ -5,10 +5,25 @@
   var signupTab;
   var loginFormContainer;
   var signupFormContainer;
+  var loginMainStep;
   var loginForm;
   var loginEmail;
   var loginPassword;
   var loginError;
+  var forgotPasswordLink;
+  var forgotPasswordStep;
+  var newPasswordStep;
+  var backFromForgotBtn;
+  var backFromNewPasswordBtn;
+  var resetEmail;
+  var sendResetBtn;
+  var resetMessage;
+  var resetCode;
+  var newPassword;
+  var confirmPassword;
+  var resetPasswordBtn;
+  var resetError;
+
   var signupForm;
   var signupName;
   var signupEmail;
@@ -16,6 +31,11 @@
   var signupError;
   var roleSelectionStep;
   var signupFormStep;
+  var verificationStep;
+  var verificationSubtext;
+  var verificationCode;
+  var verifyBtn;
+  var verificationError;
   var roleStudentCard;
   var roleOrganizerCard;
   var backToRoleBtn;
@@ -40,6 +60,29 @@
     if (!el) return;
     el.textContent = "";
     el.hidden = true;
+  }
+
+  function showInlineMessage(el, message, variant) {
+    if (!el) return;
+    el.textContent = message || "";
+    el.hidden = !message;
+    el.classList.remove("alert-error", "alert-success");
+    if (message) {
+      el.classList.add(variant === "success" ? "alert-success" : "alert-error");
+    }
+  }
+
+  function hideInlineMessage(el) {
+    if (!el) return;
+    el.textContent = "";
+    el.hidden = true;
+    el.classList.remove("alert-error", "alert-success");
+  }
+
+  function resetLoginErrorStyle() {
+    if (!loginError) return;
+    loginError.classList.remove("alert-success");
+    loginError.classList.add("alert-error");
   }
 
   function setLoading(button, loading) {
@@ -69,14 +112,6 @@
       localStorage.setItem(USER_KEY, JSON.stringify(user));
     } catch (e) {
       /* ignore */
-    }
-  }
-
-  function hasCompletedOnboarding() {
-    try {
-      return !!localStorage.getItem("campusconnect_onboarding");
-    } catch (e) {
-      return false;
     }
   }
 
@@ -167,12 +202,75 @@
     return "Something went wrong.";
   }
 
+  function isEmailVerified(user) {
+    return user && (user.emailVerified === true || user.emailVerified === "true");
+  }
+
+  function clearPendingSignup() {
+    try {
+      sessionStorage.removeItem(PENDING_SIGNUP_KEY);
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  function hideVerificationStep() {
+    if (verificationStep) verificationStep.hidden = true;
+    hideError(verificationError);
+    if (verificationCode) verificationCode.value = "";
+  }
+
+  function showVerificationStepForEmail(email) {
+    hideError(signupError);
+    if (roleSelectionStep) roleSelectionStep.hidden = true;
+    if (signupFormStep) signupFormStep.hidden = true;
+    if (verificationStep) verificationStep.hidden = false;
+    if (verificationSubtext) {
+      verificationSubtext.textContent =
+        "We sent a 6-digit code to " + (email || "your email") + ". Enter it below to finish creating your account.";
+    }
+    hideError(verificationError);
+    if (verificationCode) verificationCode.value = "";
+    if (verificationCode) verificationCode.focus();
+  }
+
+  function showLoginMainView() {
+    if (loginMainStep) loginMainStep.hidden = false;
+    if (forgotPasswordStep) forgotPasswordStep.hidden = true;
+    if (newPasswordStep) newPasswordStep.hidden = true;
+    hideInlineMessage(resetMessage);
+    hideError(resetError);
+    if (resetEmail) resetEmail.value = "";
+    if (resetCode) resetCode.value = "";
+    if (newPassword) newPassword.value = "";
+    if (confirmPassword) confirmPassword.value = "";
+  }
+
+  function showForgotPasswordView() {
+    if (loginMainStep) loginMainStep.hidden = true;
+    if (forgotPasswordStep) forgotPasswordStep.hidden = false;
+    if (newPasswordStep) newPasswordStep.hidden = true;
+    hideInlineMessage(resetMessage);
+    hideError(resetError);
+    if (resetEmail) resetEmail.focus();
+  }
+
+  function showNewPasswordView() {
+    if (newPasswordStep) newPasswordStep.hidden = false;
+    hideError(resetError);
+    if (resetCode) resetCode.focus();
+  }
+
   function showLoginPanel() {
     loginTab.setAttribute("aria-selected", "true");
     signupTab.setAttribute("aria-selected", "false");
     loginFormContainer.hidden = false;
     signupFormContainer.hidden = true;
+    resetLoginErrorStyle();
     hideError(loginError);
+    clearPendingSignup();
+    hideVerificationStep();
+    showLoginMainView();
   }
 
   function showSignupPanel() {
@@ -180,6 +278,7 @@
     signupTab.setAttribute("aria-selected", "true");
     loginFormContainer.hidden = true;
     signupFormContainer.hidden = false;
+    hideVerificationStep();
     roleSelectionStep.hidden = false;
     signupFormStep.hidden = true;
     selectedRole = null;
@@ -219,7 +318,9 @@
 
   function onLoginSubmit(e) {
     e.preventDefault();
+    resetLoginErrorStyle();
     hideError(loginError);
+    hideInlineMessage(resetMessage);
 
     var email = (loginEmail && loginEmail.value.trim()) || "";
     var password = (loginPassword && loginPassword.value) || "";
@@ -242,6 +343,13 @@
         if (res.error) throw res.error;
         if (!res.data || !res.data.user) throw new Error("Sign in failed.");
         var u = res.data.user;
+
+        if (!isEmailVerified(u)) {
+          return ins.auth.signOut().then(function () {
+            throw new Error("Please verify your email before signing in. Check your inbox for the code.");
+          });
+        }
+
         return fetchUserRow(ins, u.id).then(function (row) {
           return { ins: ins, u: u, row: row };
         });
@@ -260,31 +368,9 @@
           return redirectAfterLoginAsync(ins, sessionUser);
         }
 
-        var pending = null;
-        try {
-          pending = JSON.parse(sessionStorage.getItem(PENDING_SIGNUP_KEY) || "null");
-        } catch (e2) {
-          pending = null;
-        }
-        var uEmail = (u.email || "").toLowerCase();
-        if (pending && pending.email && uEmail === String(pending.email).toLowerCase()) {
-          var displayName2 = pending.name || (u.profile && u.profile.name) || email.split("@")[0];
-          var role2 = pending.role || "student";
-          return ensureUserInTable(ins, {
-            id: u.id,
-            email: u.email,
-            name: displayName2,
-            role: role2,
-          }).then(function () {
-            sessionStorage.removeItem(PENDING_SIGNUP_KEY);
-            var sessionUser2 = { id: u.id, email: u.email, name: displayName2, role: role2 };
-            writeSession(sessionUser2);
-            setLoading(loginSubmitBtn, false);
-            return redirectAfterLoginAsync(ins, sessionUser2);
-          });
-        }
-
-        throw new Error("Account setup incomplete. Finish sign up or use the same email you registered with.");
+        throw new Error(
+          "Your account is not fully registered yet. Complete sign up and email verification, then try again."
+        );
       })
       .catch(function (err) {
         showError(loginError, authErrorMessage(err) || "Login failed. Try again.");
@@ -343,20 +429,24 @@
 
         if (d.requireEmailVerification && !d.accessToken) {
           try {
-            sessionStorage.setItem(PENDING_SIGNUP_KEY, JSON.stringify({ email: email, name: name, role: role }));
+            sessionStorage.setItem(
+              PENDING_SIGNUP_KEY,
+              JSON.stringify({ email: email, name: name, role: role })
+            );
           } catch (e3) {
             /* ignore */
           }
           setLoading(signupSubmitBtn, false);
-          showError(
-            signupError,
-            "We sent a verification code to your email. Enter it to verify, then sign in here. Check spam if you do not see it."
-          );
+          showVerificationStepForEmail(email);
           return;
         }
 
         if (!d.accessToken) {
           throw new Error("Could not sign you in. Try again.");
+        }
+
+        if (!isEmailVerified(d.user)) {
+          throw new Error("Please verify your email before continuing.");
         }
 
         return ensureUserInTable(ins, {
@@ -374,6 +464,174 @@
       .catch(function (err) {
         showError(signupError, authErrorMessage(err) || "Sign up failed. Try again.");
         setLoading(signupSubmitBtn, false);
+      });
+  }
+
+  function onVerifyClick() {
+    hideError(verificationError);
+    var code = (verificationCode && verificationCode.value.replace(/\D/g, "")) || "";
+    var pending = null;
+    try {
+      pending = JSON.parse(sessionStorage.getItem(PENDING_SIGNUP_KEY) || "null");
+    } catch (e) {
+      pending = null;
+    }
+
+    if (!pending || !pending.email) {
+      showError(verificationError, "Sign up session expired. Start over from Sign up.");
+      return;
+    }
+    if (code.length !== 6) {
+      showError(verificationError, "Enter the 6-digit code from your email.");
+      return;
+    }
+
+    setLoading(verifyBtn, true);
+    getInsforge()
+      .then(function (ins) {
+        return ins.auth
+          .verifyEmail({
+            email: pending.email,
+            otp: code,
+          })
+          .then(function (res) {
+            return { ins: ins, res: res, pending: pending };
+          });
+      })
+      .then(function (ctx) {
+        if (ctx.res.error) throw ctx.res.error;
+        var vd = ctx.res.data;
+        if (!vd || !vd.user) throw new Error("Verification failed.");
+        var u = vd.user;
+        if (!isEmailVerified(u)) {
+          throw new Error("Email could not be verified. Try again or request a new code.");
+        }
+
+        var p = ctx.pending;
+        return ensureUserInTable(ctx.ins, {
+          id: u.id,
+          email: p.email,
+          name: p.name,
+          role: p.role,
+        }).then(function () {
+          return { u: u, pending: p };
+        });
+      })
+      .then(function (x) {
+        clearPendingSignup();
+        var sessionUser = {
+          id: x.u.id,
+          email: x.pending.email,
+          name: x.pending.name,
+          role: x.pending.role,
+        };
+        writeSession(sessionUser);
+        setLoading(verifyBtn, false);
+        redirectAfterSignup(sessionUser);
+      })
+      .catch(function (err) {
+        showError(verificationError, authErrorMessage(err) || "Verification failed.");
+        setLoading(verifyBtn, false);
+      });
+  }
+
+  function onForgotPasswordLinkClick(e) {
+    e.preventDefault();
+    resetLoginErrorStyle();
+    hideError(loginError);
+    hideInlineMessage(resetMessage);
+    var em = (loginEmail && loginEmail.value.trim()) || "";
+    if (resetEmail) resetEmail.value = em;
+    showForgotPasswordView();
+  }
+
+  function onSendResetClick() {
+    hideInlineMessage(resetMessage);
+    var email = (resetEmail && resetEmail.value.trim()) || "";
+    if (!email) {
+      showInlineMessage(resetMessage, "Please enter your email.", "error");
+      return;
+    }
+
+    var redirectTo = window.location.href.split("#")[0];
+    setLoading(sendResetBtn, true);
+    getInsforge()
+      .then(function (ins) {
+        return ins.auth.sendResetPasswordEmail({ email: email, redirectTo: redirectTo });
+      })
+      .then(function (res) {
+        if (res.error) throw res.error;
+        setLoading(sendResetBtn, false);
+        showInlineMessage(
+          resetMessage,
+          "If that email is registered, we sent a reset code. Check your inbox.",
+          "success"
+        );
+        showNewPasswordView();
+      })
+      .catch(function (err) {
+        setLoading(sendResetBtn, false);
+        showInlineMessage(resetMessage, authErrorMessage(err), "error");
+      });
+  }
+
+  function onResetPasswordClick() {
+    hideError(resetError);
+    var email = (resetEmail && resetEmail.value.trim()) || "";
+    var code = (resetCode && resetCode.value.replace(/\D/g, "")) || "";
+    var pw = (newPassword && newPassword.value) || "";
+    var pw2 = (confirmPassword && confirmPassword.value) || "";
+
+    if (!email) {
+      showError(resetError, "Email is missing. Go back and enter your email.");
+      return;
+    }
+    if (code.length !== 6) {
+      showError(resetError, "Enter the 6-digit code from your email.");
+      return;
+    }
+    if (!pw || pw.length < 8) {
+      showError(resetError, "Use a new password of at least 8 characters.");
+      return;
+    }
+    if (pw !== pw2) {
+      showError(resetError, "Passwords do not match.");
+      return;
+    }
+
+    setLoading(resetPasswordBtn, true);
+    getInsforge()
+      .then(function (ins) {
+        return ins.auth
+          .exchangeResetPasswordToken({
+            email: email,
+            code: code,
+          })
+          .then(function (ex) {
+            if (ex.error) throw ex.error;
+            if (!ex.data || !ex.data.token) throw new Error("Invalid or expired code.");
+            return ins.auth.resetPassword({
+              newPassword: pw,
+              otp: ex.data.token,
+            });
+          })
+          .then(function (rp) {
+            if (rp.error) throw rp.error;
+            return ins;
+          });
+      })
+      .then(function () {
+        setLoading(resetPasswordBtn, false);
+        if (newPasswordStep) newPasswordStep.hidden = true;
+        if (forgotPasswordStep) forgotPasswordStep.hidden = true;
+        showLoginMainView();
+        showInlineMessage(resetMessage, "Password reset! Please log in.", "success");
+        if (loginPassword) loginPassword.value = "";
+        if (loginEmail && !loginEmail.value) loginEmail.value = email;
+      })
+      .catch(function (err) {
+        showError(resetError, authErrorMessage(err) || "Could not reset password.");
+        setLoading(resetPasswordBtn, false);
       });
   }
 
@@ -424,7 +682,9 @@
       })
       .then(function (res) {
         if (res.error) return false;
-        return !!(res.data && res.data.user);
+        var u = res.data && res.data.user;
+        if (!u) return false;
+        return isEmailVerified(u);
       })
       .catch(function () {
         return false;
@@ -436,10 +696,25 @@
     signupTab = document.getElementById("signupTab");
     loginFormContainer = document.getElementById("loginFormContainer");
     signupFormContainer = document.getElementById("signupFormContainer");
+    loginMainStep = document.getElementById("loginMainStep");
     loginForm = document.getElementById("loginForm");
     loginEmail = document.getElementById("loginEmail");
     loginPassword = document.getElementById("loginPassword");
     loginError = document.getElementById("loginError");
+    forgotPasswordLink = document.getElementById("forgotPasswordLink");
+    forgotPasswordStep = document.getElementById("forgotPasswordStep");
+    newPasswordStep = document.getElementById("newPasswordStep");
+    backFromForgotBtn = document.getElementById("backFromForgotBtn");
+    backFromNewPasswordBtn = document.getElementById("backFromNewPasswordBtn");
+    resetEmail = document.getElementById("resetEmail");
+    sendResetBtn = document.getElementById("sendResetBtn");
+    resetMessage = document.getElementById("resetMessage");
+    resetCode = document.getElementById("resetCode");
+    newPassword = document.getElementById("newPassword");
+    confirmPassword = document.getElementById("confirmPassword");
+    resetPasswordBtn = document.getElementById("resetPasswordBtn");
+    resetError = document.getElementById("resetError");
+
     signupForm = document.getElementById("signupForm");
     signupName = document.getElementById("signupName");
     signupEmail = document.getElementById("signupEmail");
@@ -447,6 +722,11 @@
     signupError = document.getElementById("signupError");
     roleSelectionStep = document.getElementById("roleSelectionStep");
     signupFormStep = document.getElementById("signupFormStep");
+    verificationStep = document.getElementById("verificationStep");
+    verificationSubtext = document.getElementById("verificationSubtext");
+    verificationCode = document.getElementById("verificationCode");
+    verifyBtn = document.getElementById("verifyBtn");
+    verificationError = document.getElementById("verificationError");
     roleStudentCard = document.getElementById("roleStudentCard");
     roleOrganizerCard = document.getElementById("roleOrganizerCard");
     backToRoleBtn = document.getElementById("backToRoleBtn");
@@ -481,6 +761,35 @@
     }
     if (signupForm) {
       signupForm.addEventListener("submit", onSignupSubmit);
+    }
+
+    if (forgotPasswordLink) {
+      forgotPasswordLink.addEventListener("click", onForgotPasswordLinkClick);
+    }
+    if (sendResetBtn) {
+      sendResetBtn.addEventListener("click", onSendResetClick);
+    }
+    if (resetPasswordBtn) {
+      resetPasswordBtn.addEventListener("click", onResetPasswordClick);
+    }
+    if (verifyBtn) {
+      verifyBtn.addEventListener("click", onVerifyClick);
+    }
+    if (backFromForgotBtn) {
+      backFromForgotBtn.addEventListener("click", function () {
+        showLoginMainView();
+        resetLoginErrorStyle();
+        hideError(loginError);
+      });
+    }
+    if (backFromNewPasswordBtn) {
+      backFromNewPasswordBtn.addEventListener("click", function () {
+        if (newPasswordStep) newPasswordStep.hidden = true;
+        hideError(resetError);
+        if (resetCode) resetCode.value = "";
+        if (newPassword) newPassword.value = "";
+        if (confirmPassword) confirmPassword.value = "";
+      });
     }
   }
 
